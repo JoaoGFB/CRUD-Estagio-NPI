@@ -1,121 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useContext, type ReactNode } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthContext } from './contexts/AuthContext';
+import { Login } from './pages/Login';
+import { Layout } from './components/Layout';
+import { Salas } from './pages/Salas';
+import { NovaSala } from './pages/NovaSala';
+import { Tags } from './pages/Tags';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+//evita erros de tipagem no children
+interface PrivateRouteProps {
+  children: ReactNode;
 }
 
-export default App
+const PrivateRoute = ({ children }: PrivateRouteProps) => {
+  const { signed } = useContext(AuthContext);
+  
+  return signed ? <>{children}</> : <Navigate to="/login" />;
+};
+
+const RoutesConfig = () => {
+  const { signed } = useContext(AuthContext);
+
+  return (
+    <Routes>
+      {/*se já estiver logado, não precisa ver a tela de login*/}
+      <Route path="/login" element={signed ? <Navigate to="/" /> : <Login />} />
+      
+      {/*rota protegida*/}
+      <Route 
+        path="/" 
+        element={
+          <PrivateRoute>
+            <Layout>
+              <Salas />
+            </Layout>
+          </PrivateRoute>
+        } 
+      />
+      {/*rota do catálogo */}
+      <Route 
+        path="/" 
+        element={<PrivateRoute><Layout><Salas /></Layout></PrivateRoute>} 
+      />
+      {/*rota de cadastro de sala*/}
+      <Route 
+        path="/salas/nova" 
+        element={<PrivateRoute><Layout><NovaSala /></Layout></PrivateRoute>} 
+      />
+      <Route 
+        path="/tags" 
+        element={<PrivateRoute><Layout><Tags /></Layout></PrivateRoute>} 
+      />
+      <Route 
+        path="/salas/editar/:id" 
+        element={<PrivateRoute><Layout><NovaSala /></Layout></PrivateRoute>} 
+      />
+      
+      
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <RoutesConfig />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;
