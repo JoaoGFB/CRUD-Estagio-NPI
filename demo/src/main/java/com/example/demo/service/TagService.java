@@ -3,20 +3,22 @@ package com.example.demo.service;
 import com.example.demo.dto.TagRequestDTO;
 import com.example.demo.dto.TagResponseDTO;
 import com.example.demo.model.Tag;
+import com.example.demo.repository.SalaRepository;
+import com.example.demo.repository.TagRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import com.example.demo.repository.TagRepository;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class TagService {
     private final TagRepository tagRepository;
+    private final SalaRepository salaRepository;
 
-    public TagService(TagRepository tagRepository) {
+    public TagService(TagRepository tagRepository, SalaRepository salaRepository) {
         this.tagRepository = tagRepository;
+        this.salaRepository = salaRepository;
     }
 
     //create
@@ -43,20 +45,22 @@ public class TagService {
 
     //update
     public TagResponseDTO updateTag(Long id, TagRequestDTO dto) {
-        //busca a tag no banco (se não achar, devolve erro 404)
         Tag tagExistente = tagRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag não encontrada"));
 
         tagExistente.setNome(dto.getNome());
 
-        //salva novamente (como tem ID, é um update e não um insert)
         Tag tagAtualizada = tagRepository.save(tagExistente);
         return mapToResponse(tagAtualizada);
     }
 
-    // DELETE
+    //delete
     public void deleteTag(Long id) {
-        // Verifica se existe antes de deletar
+       //verifica se a tag está em uso por alguma sala
+        if (salaRepository.existsByTagsId(id))
+            throw new IllegalStateException("Ação bloqueada: Esta tag está vinculada a uma ou mais salas.");
+
+        //verifica se a tag existe e deleta
         Tag tagExistente = tagRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag não encontrada"));
 

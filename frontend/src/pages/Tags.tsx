@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import api from '../service/api';
+import { isAxiosError } from 'axios';
 
 interface Tag {
   id: number;
@@ -14,13 +15,12 @@ interface NovaTagForm {
 export const Tags = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   
-  //isso é um estado numérico - serve apenas como gatilho para recarregar a lista
+  //um estado numérico, serve como um gatilho para recarregar a lista
   const [refreshTrigger, setRefreshTrigger] = useState(0); 
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm<NovaTagForm>();
 
-  
-  //roda na primeira vez que a tela abre, E toda vez que o 'refreshTrigger' mudar de valor.
+  //roda na primeira vez e quando o 'refreshTrigger' mudar de valor
   useEffect(() => {
     const fetchTags = async () => {
       try {
@@ -34,7 +34,6 @@ export const Tags = () => {
     fetchTags();
   }, [refreshTrigger]); 
 
-  
   const recarregarLista = () => setRefreshTrigger((prev) => prev + 1);
 
   const onSubmit = async (data: NovaTagForm) => {
@@ -56,7 +55,11 @@ export const Tags = () => {
         recarregarLista(); 
       } catch (error) {
         console.error("Erro ao deletar tag:", error);
-        alert('Erro ao excluir. Verifique se esta tag não está vinculada a nenhuma sala!');
+        if (isAxiosError(error) && error.response) {
+          alert(error.response.data); //quando a tag está vinculada
+        } else {
+          alert('Erro ao excluir. Verifique se esta tag não está vinculada a nenhuma sala!');
+        }
       }
     }
   };

@@ -40,8 +40,12 @@ public class TagController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        tagService.deleteTag(id);
-        return ResponseEntity.noContent().build(); // Retorna 204 No Content, padrão de API REST para deletes
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            tagService.deleteTag(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());//devolve 400 Bad Request
+        }
     }
 }

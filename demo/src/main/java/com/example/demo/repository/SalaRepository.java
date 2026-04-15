@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SalaRepository extends JpaRepository<Sala, Long>{
-
+    boolean existsByTagsId(Long tagId);//verifica se alguma sala tem uma tag com o ID
 }
