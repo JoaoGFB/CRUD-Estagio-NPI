@@ -3,57 +3,141 @@ import { useForm } from 'react-hook-form';
 import api from '../service/api';
 import { AuthContext } from '../contexts/AuthContext';
 
-//definir a interface para tipar os dados do formulário e remover o 'any'
 interface LoginForm {
   login: string;
   senha: string;
 }
 
+const IconLock = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+const IconMail = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+  </svg>
+);
+
+const IconKey = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
 export const Login = () => {
   const { login } = useContext(AuthContext);
   const [errorMsg, setErrorMsg] = useState('');
-  
-  const { register, handleSubmit } = useForm<LoginForm>();
+
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>();
 
   const onSubmit = async (data: LoginForm) => {
     try {
+      setErrorMsg('');
       const response = await api.post('/auth/login', data);
-      if (response.data.token) login(response.data.token);
-    } catch (error: unknown) { 
-      console.error('Erro na tentativa de login:', error);
-      setErrorMsg('Acesso negado. Verifique os dados.');
+      if (response.data.token) {
+        login(response.data.token);
+      }
+    } catch (error) {
+      setErrorMsg('Credenciais inválidas. Verifique seus dados e tente novamente.');
+      console.error(error);
     }
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '3.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <div style={{ 
-            width: '60px', height: '60px', background: 'var(--orange-glossy)', 
-            borderRadius: '20px', margin: '0 auto 1.5rem', display: 'flex', 
-            alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(251, 146, 60, 0.3)' 
-          }}>
-             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+    <div className="login-wrapper">
+      {/*orbs de fundo */}
+      <div className="login-orb login-orb-1" />
+      <div className="login-orb login-orb-2" />
+      <div className="login-orb login-orb-3" />
+
+      <div className="login-card">
+        {/*reflexo inferior do card */}
+        <div className="login-card-shine" />
+
+        <div className="login-header">
+          <div className="login-icon">
+            <IconLock />
           </div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#431407' }}>Reserva de Salas</h2>
-          <span style={{ color: '#f97316', fontWeight: 800 }}>NÚCLEO DE PRÁTICAS EM INFORMÁTICA</span>
+          <h1 className="login-title">Reserva de Salas</h1>
+          <p className="login-subtitle">Acesse com suas credenciais institucionais</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {errorMsg && <div style={{ padding: '1rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 600 }}>{errorMsg}</div>}
-          
-          <div className="input-group">
-            <label style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>E-mail institucional</label>
-            <input type="email" className="aero-input" placeholder="usuario@unifil.br" {...register('login')} />
+        <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
+          {errorMsg && (
+            <div className="error-banner">
+              <IconAlert />
+              {errorMsg}
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">
+              <IconMail />
+              E-mail
+            </label>
+            <input
+              type="email"
+              className="form-input"
+              placeholder="seu@email.institucional"
+              {...register('login', { required: 'O e-mail é obrigatório' })}
+            />
+            {errors.login && (
+              <span className="form-error">
+                <IconAlert />
+                {errors.login.message}
+              </span>
+            )}
           </div>
 
-          <div className="input-group">
-            <label style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>Chave de Acesso</label>
-            <input type="password" className="aero-input" placeholder="••••••••" {...register('senha')} />
+          <div className="form-group">
+            <label className="form-label">
+              <IconKey />
+              Senha
+            </label>
+            <input
+              type="password"
+              className="form-input"
+              placeholder="••••••••"
+              {...register('senha', { required: 'A senha é obrigatória' })}
+            />
+            {errors.senha && (
+              <span className="form-error">
+                <IconAlert />
+                {errors.senha.message}
+              </span>
+            )}
           </div>
 
-          <button type="submit" className="btn-bubble btn-orange" style={{ padding: '1.2rem', marginTop: '1rem' }}>Acessar Sistema</button>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="spinner" style={{ borderWidth: '2px', width: '16px', height: '16px' }} />
+                Entrando...
+              </>
+            ) : (
+              'Entrar no Sistema'
+            )}
+          </button>
         </form>
       </div>
     </div>

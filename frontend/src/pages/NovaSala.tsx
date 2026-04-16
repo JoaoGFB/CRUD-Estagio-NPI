@@ -14,15 +14,88 @@ interface NovaSalaForm {
   capacidade: number;
   interdisciplinar: boolean;
   cursoVinculado: string;
-  tagIds: string[]; 
+  tagIds: string[];
 }
+
+const IconArrowLeft = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12"/>
+    <polyline points="12 19 5 12 12 5"/>
+  </svg>
+);
+
+const IconSave = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+  </svg>
+);
+
+const IconText = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="4 7 4 4 20 4 20 7"/>
+    <line x1="9" y1="20" x2="15" y2="20"/>
+    <line x1="12" y1="4" x2="12" y2="20"/>
+  </svg>
+);
+
+const IconMapPin = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+
+const IconUsers = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
+const IconBook = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+  </svg>
+);
+
+const IconTag = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
 
 export const NovaSala = () => {
   const { id } = useParams();
   const isEditing = !!id;
+
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
   const navigate = useNavigate();
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<NovaSalaForm>();
+
+  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } =
+    useForm<NovaSalaForm>();
+
   const isInterdisciplinar = watch('interdisciplinar');
 
   useEffect(() => {
@@ -36,24 +109,27 @@ export const NovaSala = () => {
           const salaResponse = await api.get(`/salas/${id}`);
           const sala = salaResponse.data;
 
-          const tagIdsAtuais = sala.tags.map((nomeTag: string) => {
-            const tagEncontrada = tagsBackend.find((t: Tag) => t.nome === nomeTag);
-            return tagEncontrada ? String(tagEncontrada.id) : null;
-          }).filter(Boolean);
+          const tagIdsAtuais = sala.tags
+            .map((nomeTag: string) => {
+              const tagEncontrada = tagsBackend.find((t: Tag) => t.nome === nomeTag);
+              return tagEncontrada ? String(tagEncontrada.id) : null;
+            })
+            .filter(Boolean);
 
           reset({
             nome: sala.nome,
             campus: sala.campus,
             capacidade: sala.capacidade,
             interdisciplinar: sala.interdisciplinar,
-            cursoVinculado: sala.cursoVinculado || "",
-            tagIds: tagIdsAtuais
+            cursoVinculado: sala.cursoVinculado || '',
+            tagIds: tagIdsAtuais,
           });
         }
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error('Erro ao carregar dados:', error);
       }
     };
+
     carregarDados();
   }, [id, isEditing, reset]);
 
@@ -62,82 +138,179 @@ export const NovaSala = () => {
       const payload = {
         ...data,
         capacidade: Number(data.capacidade),
-        cursoVinculado: data.interdisciplinar ? "" : data.cursoVinculado,
-        tagIds: data.tagIds ? data.tagIds.map(Number) : []
+        cursoVinculado: data.interdisciplinar ? '' : data.cursoVinculado,
+        tagIds: data.tagIds ? data.tagIds.map(Number) : [],
       };
 
       if (isEditing) {
         await api.put(`/salas/${id}`, payload);
-        alert('Infraestrutura atualizada com sucesso!');
+        alert('Sala atualizada com sucesso!');
       } else {
         await api.post('/salas', payload);
-        alert('Nova sala provisionada com sucesso!');
+        alert('Sala criada com sucesso!');
       }
+
       navigate('/');
     } catch (error) {
-      console.error("Erro ao salvar sala:", error);
-      alert('Erro na transação. Verifique os dados fornecidos.');
+      console.error('Erro ao salvar sala:', error);
+      alert('Erro ao salvar. Verifique os dados.');
     }
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '2.5rem', maxWidth: '800px', margin: '0 auto' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.5rem' }}>
-        <h2 style={{ margin: 0, color: '#0369a1' }}>{isEditing ? 'Configurar Ambiente' : 'Provisionar Novo Ambiente'}</h2>
-        <button onClick={() => navigate('/')} className="btn-glossy btn-outline" style={{ padding: '0.5rem 1rem' }}>Voltar</button>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="bento-grid">
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-          <div className="input-group">
-            <label>Nomenclatura do Ambiente *</label>
-            <input type="text" className="glass-input" {...register('nome', { required: 'Nome é obrigatório' })} />
-            {errors.nome && <span style={{ color: '#be123c', fontSize: '0.8rem', marginTop: '0.25rem' }}>{errors.nome.message}</span>}
-          </div>
-          <div className="input-group">
-            <label>Localização / Campus *</label>
-            <input type="text" className="glass-input" {...register('campus', { required: 'Campus é obrigatório' })} />
-          </div>
+    <div>
+      <div className="form-panel">
+        <div className="form-title-row">
+          <h2>{isEditing ? 'Editar Sala' : 'Cadastrar Nova Sala'}</h2>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/')}>
+            <IconArrowLeft />
+            Voltar
+          </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-          <div className="input-group">
-            <label>Capacidade Operacional (Pessoas) *</label>
-            <input type="number" className="glass-input" {...register('capacidade', { required: true, min: 1 })} />
-          </div>
-          
-          <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', borderRadius: '12px' }}>
-            <input type="checkbox" {...register('interdisciplinar')} id="inter" style={{ width: '20px', height: '20px', accentColor: '#4facfe' }} />
-            <label htmlFor="inter" style={{ margin: 0, fontWeight: 500, cursor: 'pointer' }}>Ambiente Multidisciplinar?</label>
-          </div>
-        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="form-grid">
+          {/* Linha 1: Nome e Campus */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}
+               className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label">
+                <IconText />
+                Nome da Sala *
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ex: Laboratório 01"
+                {...register('nome', { required: 'Nome é obrigatório' })}
+              />
+              {errors.nome && (
+                <span className="form-error">
+                  <IconAlert />
+                  {errors.nome.message}
+                </span>
+              )}
+            </div>
 
-        {!isInterdisciplinar && (
-          <div className="input-group">
-            <label>Curso Vinculado</label>
-            <input type="text" className="glass-input" {...register('cursoVinculado')} placeholder="Ex: Ciência da Computação" />
+            <div className="form-group">
+              <label className="form-label">
+                <IconMapPin />
+                Campus *
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ex: Campus Central"
+                {...register('campus', { required: 'Campus é obrigatório' })}
+              />
+              {errors.campus && (
+                <span className="form-error">
+                  <IconAlert />
+                  {errors.campus.message}
+                </span>
+              )}
+            </div>
           </div>
-        )}
 
-        <div className="input-group" style={{ marginTop: '1rem' }}>
-          <label>Características e Recursos (Tags)</label>
-          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', borderRadius: '12px' }}>
-            {tagsDisponiveis.length === 0 ? <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>O catálogo de recursos está vazio.</p> : null}
-            {tagsDisponiveis.map(tag => (
-              <div key={tag.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input type="checkbox" value={tag.id} {...register('tagIds')} id={`tag-${tag.id}`} style={{ width: '18px', height: '18px', accentColor: '#4facfe' }} />
-                <label htmlFor={`tag-${tag.id}`} style={{ cursor: 'pointer' }}>{tag.nome}</label>
+          {/* Linha 2: Capacidade e Multidisciplinar */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}
+               className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label">
+                <IconUsers />
+                Capacidade (lugares) *
+              </label>
+              <input
+                type="number"
+                className="form-input"
+                placeholder="Ex: 40"
+                {...register('capacidade', { required: true, min: 1 })}
+              />
+              {errors.capacidade && (
+                <span className="form-error">
+                  <IconAlert />
+                  Capacidade mínima de 1 lugar
+                </span>
+              )}
+            </div>
+
+            <div className="form-group" style={{ justifyContent: 'flex-end' }}>
+              <label className="form-label" style={{ visibility: 'hidden' }}>·</label>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="interdisciplinar"
+                  {...register('interdisciplinar')}
+                />
+                <label htmlFor="interdisciplinar">Sala Multidisciplinar?</label>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
-        <button type="submit" className={`btn-glossy ${isEditing ? 'btn-yellow' : 'btn-cyan'}`} style={{ marginTop: '2rem', padding: '1rem', fontSize: '1.1rem' }}>
-          {isEditing ? 'Aplicar Configurações' : 'Finalizar Provisionamento'}
-        </button>
-      </form>
+          {/*vinculação de curso*/}
+          {!isInterdisciplinar && (
+            <div className="form-group">
+              <label className="form-label">
+                <IconBook />
+                Curso Vinculado
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ex: Ciência da Computação"
+                {...register('cursoVinculado')}
+              />
+            </div>
+          )}
+
+          <div>
+            <div className="tags-section-title">
+              <IconTag />
+              Características da Sala (Tags)
+            </div>
+
+            {tagsDisponiveis.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Nenhuma tag cadastrada. Crie tags na seção de Tags.
+              </p>
+            ) : (
+              <div className="tags-grid">
+                {tagsDisponiveis.map((tag) => (
+                  <div key={tag.id} className="tag-checkbox-item">
+                    <input
+                      type="checkbox"
+                      id={`tag-${tag.id}`}
+                      value={tag.id}
+                      {...register('tagIds')}
+                    />
+                    <label htmlFor={`tag-${tag.id}`}>{tag.nome}</label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/*submit*/}
+          <div style={{ marginTop: '8px' }}>
+            <button
+              type="submit"
+              className={`btn ${isEditing ? 'btn-warning' : 'btn-success'}`}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="spinner" style={{ borderWidth: '2px', width: '16px', height: '16px' }} />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <IconSave />
+                  {isEditing ? 'Salvar Alterações' : 'Salvar Nova Sala'}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

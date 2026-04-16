@@ -12,6 +12,65 @@ interface Sala {
   tags: string[];
 }
 
+const IconPlus = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
+const IconDoor = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/>
+    <path d="M10 12v.01"/>
+    <path d="M13 4.562v16.157a1 1 0 0 1-1.279.961L5 19V5.562a2 2 0 0 1 1.279-1.87l6-2.25a1 1 0 0 1 1.279.962v.118z"/>
+  </svg>
+);
+
+const IconUsers = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
+const IconMapPin = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+
+const IconEdit = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
+
+const IconInbox = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+  </svg>
+);
+
 export const Salas = () => {
   const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +82,8 @@ export const Salas = () => {
         const response = await api.get('/salas');
         setSalas(response.data);
       } catch (error) {
-        console.error("Erro ao buscar salas:", error);
+        console.error('Erro ao buscar salas:', error);
+        alert('Sua sessão expirou ou ocorreu um erro.');
       } finally {
         setLoading(false);
       }
@@ -31,53 +91,117 @@ export const Salas = () => {
     buscarSalas();
   }, []);
 
-  if (loading) return <div style={{ textAlign: 'center', marginTop: '5rem', fontSize: '1.2rem', fontWeight: 600 }}>Sincronizando Ambientes NPI...</div>;
+  const deletarSala = async (id: number) => {
+    if (window.confirm('Tem certeza que deseja excluir esta sala?')) {
+      try {
+        await api.delete(`/salas/${id}`);
+        setSalas((prev) => prev.filter((s) => s.id !== id));
+      } catch (error) {
+        console.error('Erro ao deletar sala:', error);
+        alert('Erro ao excluir sala.');
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner" />
+        Carregando catálogo de salas...
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
-        <div>
-          <span style={{ color: '#f97316', fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase' }}>Infraestrutura Universitária</span>
-          <h2 style={{ margin: '0.2rem 0 0 0', fontSize: '2.5rem', fontWeight: 800 }}>Catálogo de Espaços</h2>
+      {/*cabeçalho da página */}
+      <div className="page-actions">
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <h2>
+            <IconDoor />
+            Catálogo de Salas
+          </h2>
+          <p>{salas.length} {salas.length === 1 ? 'sala disponível' : 'salas disponíveis'}</p>
         </div>
-        <button onClick={() => navigate('/salas/nova')} className="btn-bubble btn-orange">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Novo Espaço
+        <button
+          className="btn btn-success"
+          onClick={() => navigate('/salas/nova')}
+        >
+          <IconPlus />
+          Nova Sala
         </button>
       </div>
-        
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
-        {salas.map((sala) => (
-          <div key={sala.id} className="glass-panel" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ width: '50px', height: '50px', background: 'var(--orange-soft)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#431407' }}>{sala.nome}</h3>
-                <span style={{ color: '#f97316', fontSize: '0.85rem', fontWeight: 700 }}>{sala.campus}</span>
-              </div>
-            </div>
-            
-            <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: '16px' }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#7c2d12', fontWeight: 600 }}>
-                {sala.capacidade} Lugares • {sala.interdisciplinar ? 'Multidisciplinar' : sala.cursoVinculado}
-              </p>
-            </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2rem' }}>
-              {sala.tags.map((tag, index) => (
-                <span key={index} style={{ padding: '0.4rem 0.8rem', background: 'white', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(251, 146, 60, 0.2)' }}>{tag}</span>
-              ))}
-            </div>
+      {/*cards*/}
+      {salas.length === 0 ? (
+        <div className="empty-state">
+          <IconInbox />
+          <p>Nenhuma sala cadastrada ainda.</p>
+          <button
+            className="btn btn-primary"
+            style={{ marginTop: '16px' }}
+            onClick={() => navigate('/salas/nova')}
+          >
+            <IconPlus />
+            Cadastrar primeira sala
+          </button>
+        </div>
+      ) : (
+        <div className="rooms-grid">
+          {salas.map((sala) => (
+            <div key={sala.id} className="room-card">
+              {/*reflexo ao fundo do card */}
+              <div className="room-card-inner-shine" />
 
-            <div style={{ display: 'flex', gap: '1rem', borderTop: '2px solid rgba(251, 146, 60, 0.1)', paddingTop: '1.5rem' }}>
-              <button onClick={() => navigate(`/salas/editar/${sala.id}`)} className="btn-bubble btn-white" style={{ flex: 1, border: '1px solid #f97316', color: '#f97316' }}>Configurar</button>
-              <button onClick={() => {/* ... logica deletar ... */}} className="btn-bubble btn-white" style={{ color: '#ef4444' }}>Excluir</button>
+              {/*cabeçalho dos cards*/}
+              <div className="room-card-header">
+                <h3 className="room-card-name">{sala.nome}</h3>
+                <div className="room-card-meta">
+                  <IconMapPin />
+                  {sala.campus}
+                  <span className="dot">·</span>
+                  <IconUsers />
+                  {sala.capacidade} lugares
+                </div>
+              </div>
+
+              {/*badge com o tipo*/}
+              <span className={`room-badge ${sala.interdisciplinar ? 'room-badge-multi' : 'room-badge-course'}`}>
+                {sala.interdisciplinar
+                  ? 'Multidisciplinar'
+                  : sala.cursoVinculado
+                    ? sala.cursoVinculado
+                    : 'Sem curso vinculado'}
+              </span>
+
+              {sala.tags.length > 0 && (
+                <div className="room-tags">
+                  {sala.tags.map((tag, i) => (
+                    <span key={i} className="tag-chip">{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              <div className="room-card-actions">
+                <button
+                  className="btn btn-warning btn-sm"
+                  onClick={() => navigate(`/salas/editar/${sala.id}`)}
+                >
+                  <IconEdit />
+                  Editar
+                </button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => deletarSala(sala.id)}
+                >
+                  <IconTrash />
+                  Excluir
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

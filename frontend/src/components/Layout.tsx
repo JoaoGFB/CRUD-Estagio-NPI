@@ -6,73 +6,86 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+//ícones inline
+const IconRooms = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
+
+const IconTags = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+
+const IconLogout = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
+
+const IconBuilding = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <path d="M9 3v18"/>
+    <path d="M15 3v18"/>
+    <path d="M3 9h18"/>
+    <path d="M3 15h18"/>
+  </svg>
+);
+
 export const Layout = ({ children }: LayoutProps) => {
   const { logout } = useContext(AuthContext);
   const location = useLocation();
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path || (path === '/' && location.pathname === '/');
 
   return (
-    <div style={{ paddingBottom: '4rem' }}>
-      <header className="glass-panel" style={{ 
-        margin: '1.5rem', 
-        padding: '0.75rem 2rem', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        borderRadius: '100px'
-      }}>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <div style={{ 
-              width: '40px', height: '40px', background: 'var(--orange-glossy)', 
-              borderRadius: '12px', display: 'flex', alignItems: 'center', 
-              justifyContent: 'center', boxShadow: '0 4px 12px rgba(251, 146, 60, 0.4)' 
-            }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              </svg>
-            </div>
-            <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color: '#9a3412', letterSpacing: '-0.5px' }}>Reserva de Salas - NPI</h1>
+    <div className="app-layout">
+      {/*sidebar*/}
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">
+            <IconBuilding />
           </div>
-          
-          <nav style={{ 
-            display: 'flex', 
-            background: 'rgba(0,0,0,0.03)', 
-            padding: '0.4rem', 
-            borderRadius: '50px',
-            gap: '0.5rem'
-          }}>
-            <Link to="/" className={isActive('/') ? 'btn-bubble btn-white' : ''} style={{ 
-              padding: '0.5rem 1.5rem', 
-              color: isActive('/') ? '#f97316' : '#7c2d12', 
-              textDecoration: 'none', 
-              fontWeight: '700',
-              borderRadius: '50px',
-              fontSize: '0.9rem'
-            }}>Salas</Link>
-            <Link to="/tags" className={isActive('/tags') ? 'btn-bubble btn-white' : ''} style={{ 
-              padding: '0.5rem 1.5rem', 
-              color: isActive('/tags') ? '#f97316' : '#7c2d12', 
-              textDecoration: 'none', 
-              fontWeight: '700',
-              borderRadius: '50px',
-              fontSize: '0.9rem'
-            }}>Tags</Link>
-          </nav>
+          <div className="sidebar-logo-text">
+            <span className="sidebar-logo-title">Reserva de Salas</span>
+            <span className="sidebar-logo-sub">NPI</span>
+          </div>
         </div>
 
-        <button onClick={logout} className="btn-bubble btn-ghost" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}>
-          Finalizar Sessão
-        </button>
-      </header>
+        {/*menu*/}
+        <span className="sidebar-section-label">Menu</span>
 
-      <main style={{ padding: '0 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+        <Link to="/" className={`sidebar-link ${isActive('/') ? 'active' : ''}`}>
+          <IconRooms />
+          Salas
+        </Link>
+
+        <Link to="/tags" className={`sidebar-link ${isActive('/tags') ? 'active' : ''}`}>
+          <IconTags />
+          Tags
+        </Link>
+
+        <div className="sidebar-bottom">
+          <button className="btn-logout" onClick={logout}>
+            <IconLogout />
+            Sair do Sistema
+          </button>
+        </div>
+      </aside>
+
+      <main className="main-content">
         {children}
       </main>
     </div>

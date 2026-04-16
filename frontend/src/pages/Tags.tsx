@@ -12,10 +12,57 @@ interface NovaTagForm {
   nome: string;
 }
 
+const IconTag = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+
+const IconPlus = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
+
+const IconList = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"/>
+    <line x1="8" y1="12" x2="21" y2="12"/>
+    <line x1="8" y1="18" x2="21" y2="18"/>
+    <line x1="3" y1="6" x2="3.01" y2="6"/>
+    <line x1="3" y1="12" x2="3.01" y2="12"/>
+    <line x1="3" y1="18" x2="3.01" y2="18"/>
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
 export const Tags = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<NovaTagForm>();
+
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+    useForm<NovaTagForm>();
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -23,7 +70,7 @@ export const Tags = () => {
         const response = await api.get('/tags');
         setTags(response.data);
       } catch (error) {
-        console.error("Erro ao buscar tags:", error);
+        console.error('Erro ao buscar tags:', error);
       }
     };
     fetchTags();
@@ -34,69 +81,115 @@ export const Tags = () => {
   const onSubmit = async (data: NovaTagForm) => {
     try {
       await api.post('/tags', data);
-      reset(); 
+      reset();
       recarregarLista();
     } catch (error) {
-      console.error("Erro ao criar tag:", error);
-      alert('Erro de comunicação ao registrar recurso.');
+      console.error('Erro ao criar tag:', error);
+      alert('Erro ao criar a tag.');
     }
   };
 
   const deletarTag = async (id: number) => {
-    const confirmar = window.confirm("Atenção: Confirmar exclusão deste recurso do catálogo?");
-    if (confirmar) {
+    if (window.confirm('Tem certeza que deseja excluir esta tag?')) {
       try {
         await api.delete(`/tags/${id}`);
         recarregarLista();
       } catch (error) {
-        console.error("Erro ao deletar tag:", error);
+        console.error('Erro ao deletar tag:', error);
         if (isAxiosError(error) && error.response) {
           alert(error.response.data);
         } else {
-          alert('Ação bloqueada. Verifique dependências deste recurso em salas ativas.');
+          alert('Erro ao excluir. Verifique se esta tag não está vinculada a nenhuma sala!');
         }
       }
     }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ margin: 0, fontSize: '2rem' }}>Catálogo de Recursos</h2>
-        <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>Gerencie tags, equipamentos e características dos ambientes.</p>
+    <div className="tags-page">
+      {/*cabeçalho*/}
+      <div className="page-header">
+        <h2>
+          <IconTag />
+          Gerenciar Tags
+        </h2>
+        <p>Crie e gerencie as características disponíveis para as salas</p>
       </div>
 
-      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-          <div className="input-group" style={{ flex: 1 }}>
-            <input 
-              type="text" 
-              className="glass-input"
-              placeholder="Ex: Projetor 4K, Lousa Digital..." 
-              {...register('nome', { required: 'Defina a nomenclatura do recurso' })}
-            />
-            {errors.nome && <span style={{ color: '#be123c', fontSize: '0.8rem', display: 'block', marginTop: '0.5rem' }}>{errors.nome.message}</span>}
+      {/*painel para adição */}
+      <div className="tag-add-panel">
+        <div className="tags-section-title" style={{ marginBottom: '16px' }}>
+          <IconPlus />
+          Nova Tag
+        </div>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="tag-add-row">
+            <div style={{ flex: 1 }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Nome da tag (ex: Projetor, Ar-condicionado...)"
+                {...register('nome', { required: 'O nome da tag é obrigatório' })}
+              />
+              {errors.nome && (
+                <span className="form-error" style={{ marginTop: '6px' }}>
+                  <IconAlert />
+                  {errors.nome.message}
+                </span>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={isSubmitting}
+              style={{ flexShrink: 0 }}
+            >
+              {isSubmitting ? (
+                <span className="spinner" style={{ borderWidth: '2px', width: '16px', height: '16px' }} />
+              ) : (
+                <IconPlus />
+              )}
+              Adicionar
+            </button>
           </div>
-          <button type="submit" className="btn-glossy btn-lime" style={{ padding: '0.75rem 2rem' }}>
-            Registrar Recurso
-          </button>
         </form>
       </div>
 
-      <div className="glass-panel" style={{ padding: '2rem' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: '#0369a1' }}>Recursos Cadastrados</h3>
+      {/*lista com as tags */}
+      <div className="tag-list-panel">
+        <div className="tag-list-header">
+          <h3>
+            <IconList />
+            Tags Cadastradas
+            <span style={{
+              marginLeft: 'auto',
+              fontSize: '0.75rem',
+              background: 'rgba(34,187,238,0.15)',
+              color: 'var(--sky-600)',
+              padding: '2px 8px',
+              borderRadius: '50px',
+              fontWeight: '600',
+            }}>
+              {tags.length}
+            </span>
+          </h3>
+        </div>
+
         {tags.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>O catálogo está vazio.</p>
+          <div className="empty-state">
+            <IconTag />
+            <p>Nenhuma tag cadastrada ainda.</p>
+          </div>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          <ul className="tag-list">
             {tags.map((tag) => (
-              <li key={tag.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.3)', borderRadius: '8px', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{tag.nome}</span>
-                <button 
+              <li key={tag.id} className="tag-list-item">
+                <span className="tag-list-name">{tag.nome}</span>
+                <button
+                  className="btn btn-danger btn-sm"
                   onClick={() => deletarTag(tag.id)}
-                  className="btn-glossy btn-red"
-                  style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                 >
+                  <IconTrash />
                   Excluir
                 </button>
               </li>
