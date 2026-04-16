@@ -18,35 +18,29 @@ interface NovaSalaForm {
 }
 
 export const NovaSala = () => {
-  const { id } = useParams(); //pega o ID da URL se existir
-  const isEditing = !!id; //modo de edição
-  
+  const { id } = useParams();
+  const isEditing = !!id;
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
   const navigate = useNavigate();
-  
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<NovaSalaForm>();
   const isInterdisciplinar = watch('interdisciplinar');
 
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        //busca as tags disponíveis
         const tagsResponse = await api.get('/tags');
         const tagsBackend = tagsResponse.data;
         setTagsDisponiveis(tagsBackend);
 
-        //busca os dados da sala específica
         if (isEditing) {
           const salaResponse = await api.get(`/salas/${id}`);
           const sala = salaResponse.data;
 
-          //IDs que a sala já tem
           const tagIdsAtuais = sala.tags.map((nomeTag: string) => {
             const tagEncontrada = tagsBackend.find((t: Tag) => t.nome === nomeTag);
             return tagEncontrada ? String(tagEncontrada.id) : null;
           }).filter(Boolean);
 
-          
           reset({
             nome: sala.nome,
             campus: sala.campus,
@@ -60,7 +54,6 @@ export const NovaSala = () => {
         console.error("Erro ao carregar dados:", error);
       }
     };
-    
     carregarDados();
   }, [id, isEditing, reset]);
 
@@ -75,74 +68,74 @@ export const NovaSala = () => {
 
       if (isEditing) {
         await api.put(`/salas/${id}`, payload);
-        alert('Sala atualizada com sucesso!');
+        alert('Infraestrutura atualizada com sucesso!');
       } else {
         await api.post('/salas', payload);
-        alert('Sala criada com sucesso!');
+        alert('Nova sala provisionada com sucesso!');
       }
-      
-      navigate('/'); 
+      navigate('/');
     } catch (error) {
       console.error("Erro ao salvar sala:", error);
-      alert('Erro ao salvar. Verifique os dados.');
+      alert('Erro na transação. Verifique os dados fornecidos.');
     }
   };
 
   return (
-    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        
-        <h2>{isEditing ? 'Editar Sala' : 'Cadastrar Nova Sala'}</h2>
-        <button onClick={() => navigate('/')} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Voltar</button>
+    <div className="glass-panel" style={{ padding: '2.5rem', maxWidth: '800px', margin: '0 auto' }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.5rem' }}>
+        <h2 style={{ margin: 0, color: '#0369a1' }}>{isEditing ? 'Configurar Ambiente' : 'Provisionar Novo Ambiente'}</h2>
+        <button onClick={() => navigate('/')} className="btn-glossy btn-outline" style={{ padding: '0.5rem 1rem' }}>Voltar</button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'grid', gap: '1.5rem' }}>
+      <form onSubmit={handleSubmit(onSubmit)} className="bento-grid">
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Nome da Sala *</label>
-            <input type="text" {...register('nome', { required: 'Nome é obrigatório' })} style={{ width: '100%', padding: '0.5rem' }} />
-            {errors.nome && <span style={{ color: 'red', fontSize: '0.8rem' }}>{errors.nome.message}</span>}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div className="input-group">
+            <label>Nomenclatura do Ambiente *</label>
+            <input type="text" className="glass-input" {...register('nome', { required: 'Nome é obrigatório' })} />
+            {errors.nome && <span style={{ color: '#be123c', fontSize: '0.8rem', marginTop: '0.25rem' }}>{errors.nome.message}</span>}
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Campus *</label>
-            <input type="text" {...register('campus', { required: 'Campus é obrigatório' })} style={{ width: '100%', padding: '0.5rem' }} />
+          <div className="input-group">
+            <label>Localização / Campus *</label>
+            <input type="text" className="glass-input" {...register('campus', { required: 'Campus é obrigatório' })} />
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Capacidade (Lugares) *</label>
-            <input type="number" {...register('capacidade', { required: true, min: 1 })} style={{ width: '100%', padding: '0.5rem' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div className="input-group">
+            <label>Capacidade Operacional (Pessoas) *</label>
+            <input type="number" className="glass-input" {...register('capacidade', { required: true, min: 1 })} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
-            <input type="checkbox" {...register('interdisciplinar')} id="inter" />
-            <label htmlFor="inter">É uma sala Multidisciplinar?</label>
+          
+          <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.5rem', borderRadius: '12px' }}>
+            <input type="checkbox" {...register('interdisciplinar')} id="inter" style={{ width: '20px', height: '20px', accentColor: '#4facfe' }} />
+            <label htmlFor="inter" style={{ margin: 0, fontWeight: 500, cursor: 'pointer' }}>Ambiente Multidisciplinar?</label>
           </div>
         </div>
 
         {!isInterdisciplinar && (
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem' }}>Curso Vinculado</label>
-            <input type="text" {...register('cursoVinculado')} placeholder="Ex: Ciência da Computação" style={{ width: '100%', padding: '0.5rem' }} />
+          <div className="input-group">
+            <label>Curso Vinculado</label>
+            <input type="text" className="glass-input" {...register('cursoVinculado')} placeholder="Ex: Ciência da Computação" />
           </div>
         )}
 
-        <div>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Características da Sala (Tags)</label>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {tagsDisponiveis.length === 0 ? <p style={{ fontSize: '0.9rem', color: '#666' }}>Nenhuma tag cadastrada.</p> : null}
+        <div className="input-group" style={{ marginTop: '1rem' }}>
+          <label>Características e Recursos (Tags)</label>
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', borderRadius: '12px' }}>
+            {tagsDisponiveis.length === 0 ? <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>O catálogo de recursos está vazio.</p> : null}
             {tagsDisponiveis.map(tag => (
-              <div key={tag.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <input type="checkbox" value={tag.id} {...register('tagIds')} id={`tag-${tag.id}`} />
-                <label htmlFor={`tag-${tag.id}`}>{tag.nome}</label>
+              <div key={tag.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input type="checkbox" value={tag.id} {...register('tagIds')} id={`tag-${tag.id}`} style={{ width: '18px', height: '18px', accentColor: '#4facfe' }} />
+                <label htmlFor={`tag-${tag.id}`} style={{ cursor: 'pointer' }}>{tag.nome}</label>
               </div>
             ))}
           </div>
         </div>
 
-        <button type="submit" style={{ padding: '0.75rem', backgroundColor: isEditing ? '#ffc107' : '#28a745', color: isEditing ? '#000' : 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', marginTop: '1rem', fontWeight: 'bold' }}>
-          {isEditing ? 'Salvar Alterações' : 'Salvar Nova Sala'}
+        <button type="submit" className={`btn-glossy ${isEditing ? 'btn-yellow' : 'btn-cyan'}`} style={{ marginTop: '2rem', padding: '1rem', fontSize: '1.1rem' }}>
+          {isEditing ? 'Aplicar Configurações' : 'Finalizar Provisionamento'}
         </button>
       </form>
     </div>

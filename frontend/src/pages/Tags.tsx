@@ -14,13 +14,9 @@ interface NovaTagForm {
 
 export const Tags = () => {
   const [tags, setTags] = useState<Tag[]>([]);
-  
-  //um estado numérico, serve como um gatilho para recarregar a lista
-  const [refreshTrigger, setRefreshTrigger] = useState(0); 
-  
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<NovaTagForm>();
 
-  //roda na primeira vez e quando o 'refreshTrigger' mudar de valor
   useEffect(() => {
     const fetchTags = async () => {
       try {
@@ -30,9 +26,8 @@ export const Tags = () => {
         console.error("Erro ao buscar tags:", error);
       }
     };
-
     fetchTags();
-  }, [refreshTrigger]); 
+  }, [refreshTrigger]);
 
   const recarregarLista = () => setRefreshTrigger((prev) => prev + 1);
 
@@ -43,22 +38,22 @@ export const Tags = () => {
       recarregarLista();
     } catch (error) {
       console.error("Erro ao criar tag:", error);
-      alert('Erro ao criar a tag.');
+      alert('Erro de comunicação ao registrar recurso.');
     }
   };
 
   const deletarTag = async (id: number) => {
-    const confirmar = window.confirm("Tem certeza que deseja excluir esta tag?");
+    const confirmar = window.confirm("Atenção: Confirmar exclusão deste recurso do catálogo?");
     if (confirmar) {
       try {
         await api.delete(`/tags/${id}`);
-        recarregarLista(); 
+        recarregarLista();
       } catch (error) {
         console.error("Erro ao deletar tag:", error);
         if (isAxiosError(error) && error.response) {
-          alert(error.response.data); //quando a tag está vinculada
+          alert(error.response.data);
         } else {
-          alert('Erro ao excluir. Verifique se esta tag não está vinculada a nenhuma sala!');
+          alert('Ação bloqueada. Verifique dependências deste recurso em salas ativas.');
         }
       }
     }
@@ -66,39 +61,41 @@ export const Tags = () => {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2>Gerenciar Tags</h2>
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ margin: 0, fontSize: '2rem' }}>Catálogo de Recursos</h2>
+        <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>Gerencie tags, equipamentos e características dos ambientes.</p>
       </div>
 
-      <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginBottom: '2rem' }}>
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
+      <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+          <div className="input-group" style={{ flex: 1 }}>
             <input 
               type="text" 
-              placeholder="Nome da nova tag (ex: Projetor)" 
-              {...register('nome', { required: 'O nome da tag é obrigatório' })}
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #ccc' }}
+              className="glass-input"
+              placeholder="Ex: Projetor 4K, Lousa Digital..." 
+              {...register('nome', { required: 'Defina a nomenclatura do recurso' })}
             />
-            {errors.nome && <span style={{ color: 'red', fontSize: '0.8rem', display: 'block', marginTop: '0.5rem' }}>{errors.nome.message}</span>}
+            {errors.nome && <span style={{ color: '#be123c', fontSize: '0.8rem', display: 'block', marginTop: '0.5rem' }}>{errors.nome.message}</span>}
           </div>
-          <button type="submit" style={{ padding: '0.75rem 1.5rem', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            Adicionar Tag
+          <button type="submit" className="btn-glossy btn-lime" style={{ padding: '0.75rem 2rem' }}>
+            Registrar Recurso
           </button>
         </form>
       </div>
 
-      <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Tags Cadastradas</h3>
+      <div className="glass-panel" style={{ padding: '2rem' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: '#0369a1' }}>Recursos Cadastrados</h3>
         {tags.length === 0 ? (
-          <p style={{ color: '#666' }}>Nenhuma tag cadastrada ainda.</p>
+          <p style={{ color: 'var(--text-muted)' }}>O catálogo está vazio.</p>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {tags.map((tag) => (
-              <li key={tag.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid #eee' }}>
-                <span style={{ fontWeight: 'bold', color: '#334155' }}>{tag.nome}</span>
+              <li key={tag.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.3)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{tag.nome}</span>
                 <button 
                   onClick={() => deletarTag(tag.id)}
-                  style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                  className="btn-glossy btn-red"
+                  style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                 >
                   Excluir
                 </button>
