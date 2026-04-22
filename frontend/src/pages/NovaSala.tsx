@@ -169,7 +169,7 @@ export const NovaSala = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="form-grid">
-          {/* Linha 1: Nome e Campus */}
+          {/*nome e campus*/}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}
                className="form-grid-2">
             <div className="form-group">
@@ -211,7 +211,7 @@ export const NovaSala = () => {
             </div>
           </div>
 
-          {/* Linha 2: Capacidade e Multidisciplinar */}
+          {/*capacidade e curso vinculado*/}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}
                className="form-grid-2">
             <div className="form-group">
