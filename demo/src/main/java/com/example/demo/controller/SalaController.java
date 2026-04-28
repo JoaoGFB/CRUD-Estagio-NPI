@@ -29,7 +29,10 @@ public class SalaController {
     public ResponseEntity<List<SalaResponseDTO>> getAll() {
         return ResponseEntity.ok(salaService.getAllSalas());
     }
-
+    @GetMapping("/{id}")
+    public ResponseEntity<SalaResponseDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(salaService.getSalaById(id));
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<SalaResponseDTO> atualizar(@PathVariable Long id, @RequestBody SalaRequestDTO dto) {

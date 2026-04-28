@@ -50,6 +50,13 @@ public class SalaService {
                 .map(this::mapToResponse)//map(sala -> this.mapToResponse(sala))
                 .collect(Collectors.toList());
     }
+
+    public SalaResponseDTO getSalaById(Long id) {
+        Sala sala = salaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+        return mapToResponse(sala);
+    }
+
     private SalaResponseDTO mapToResponse(Sala sala) {
         SalaResponseDTO dto = new SalaResponseDTO();
         dto.setId(sala.getId());

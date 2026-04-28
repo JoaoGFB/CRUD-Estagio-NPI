@@ -6,7 +6,7 @@ const api = axios.create({
 
 //intercepta a requisição
 api.interceptors.request.use((config) => {
-  // Tenta pegar o token que guardamos no navegador
+  //tenta pegar o token guardado no navegador
   const token = localStorage.getItem('@NPI_Token');
   
   //se existir um token injeta ela no cabeçalho de autorização
