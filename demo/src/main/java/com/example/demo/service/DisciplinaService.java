@@ -1,0 +1,74 @@
+package com.example.demo.service;
+
+import com.example.demo.dto.DisciplinaRequestDTO;
+import com.example.demo.dto.DisciplinaResponseDTO;
+import com.example.demo.model.Disciplina;
+import com.example.demo.model.Tag;
+import com.example.demo.model.Usuario;
+import com.example.demo.repository.DisciplinaRepository;
+import com.example.demo.repository.TagRepository;
+import com.example.demo.repository.UsuarioRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class DisciplinaService {
+
+    private final DisciplinaRepository disciplinaRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final TagRepository tagRepository;
+
+    public DisciplinaService(DisciplinaRepository disciplinaRepository, UsuarioRepository usuarioRepository, TagRepository tagRepository) {
+        this.disciplinaRepository = disciplinaRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.tagRepository = tagRepository;
+    }
+
+    public DisciplinaResponseDTO createDisciplina(DisciplinaRequestDTO dto) {
+        Disciplina disciplina = new Disciplina();
+        disciplina.setNome(dto.getNome());
+
+        //faz a busca do coordenador no banco
+        Usuario coordenador = usuarioRepository.findById(dto.getCoordenadorId())
+                .orElseThrow(() -> new RuntimeException("Coordenador não encontrado"));
+        disciplina.setCoordenador(coordenador);
+
+        //liga com as tags
+        if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
+            List<Tag> tags = tagRepository.findAllById(dto.getTagIds());
+            disciplina.setTagsExigidas(tags);
+        }
+
+        Disciplina salva = disciplinaRepository.save(disciplina);
+        return mapToResponse(salva);
+    }
+
+    public List<DisciplinaResponseDTO> getAllDisciplinas() {
+        return disciplinaRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    //faz o coordenador ver apenas as matérias dele
+    public List<DisciplinaResponseDTO> getDisciplinasByCoordenador(Long coordenadorId) {
+        return disciplinaRepository.findByCoordenadorId(coordenadorId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private DisciplinaResponseDTO mapToResponse(Disciplina disciplina) {
+        DisciplinaResponseDTO dto = new DisciplinaResponseDTO();
+        dto.setId(disciplina.getId());
+        dto.setNome(disciplina.getNome());
+        dto.setNomeCoordenador(disciplina.getCoordenador().getLogin()); // Aqui enviamos o email/nome
+
+        List<String> tagsNames = disciplina.getTagsExigidas().stream()
+                .map(Tag::getNome)
+                .collect(Collectors.toList());
+        dto.setTagsExigidas(tagsNames);
+
+        return dto;
+    }
+}
