@@ -22,20 +22,19 @@ public class SalaService {
     }
 
     public SalaResponseDTO createSala(SalaRequestDTO dto) {
+        validarNomeDuplicado(dto.getNome(), null);//validar nome da sala se já existe
+
         Sala sala = new Sala();
         sala.setNome(dto.getNome());
         sala.setCampus(dto.getCampus());
         sala.setCapacidade(dto.getCapacidade());
         sala.setInterdisciplinar(dto.getInterdisciplinar());
 
-        //se for interdisciplinar, não há curso vinculado
         if (dto.getInterdisciplinar().equals(Boolean.TRUE))
             sala.setCursoVinculado(null);
         else
             sala.setCursoVinculado(dto.getCursoVinculado());
 
-
-        //busca as tags no banco usando os IDs que vieram do React
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
             List<Tag> tags = tagRepository.findAllById(dto.getTagIds());
             sala.setTags(tags);
@@ -82,6 +81,8 @@ public class SalaService {
     }
 
     public SalaResponseDTO atualizar(Long id, SalaRequestDTO dto) {
+        validarNomeDuplicado(dto.getNome(), id);
+
         Sala sala = salaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
 
@@ -89,8 +90,6 @@ public class SalaService {
         sala.setCampus(dto.getCampus());
         sala.setCapacidade(dto.getCapacidade());
         sala.setInterdisciplinar(dto.getInterdisciplinar());
-
-        //se for interdisciplinar limpa, se não, atualiza com o curso vindo do DTO
         sala.setCursoVinculado(dto.getInterdisciplinar() ? null : dto.getCursoVinculado());
 
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
@@ -101,5 +100,21 @@ public class SalaService {
 
         Sala salaAtualizada = salaRepository.save(sala);
         return mapToResponse(salaAtualizada);
+    }
+
+    private void validarNomeDuplicado(String nomeNovo, Long idIgnorado) {
+        //remove todos os espaços e converte para minúsculo
+        String nomeNormalizado = nomeNovo.replaceAll("\\s+", "").toLowerCase();
+        List<Sala> todasAsSalas = salaRepository.findAll();
+        for (Sala salaExistente : todasAsSalas) {
+            String nomeExistenteNormalizado = salaExistente.getNome().replaceAll("\\s+", "").toLowerCase();
+
+            //confere se os nomes batem após a formatação
+            if (nomeNormalizado.equals(nomeExistenteNormalizado)) {
+                //se não for a própria sala sendo editada (idIgnorado)
+                if (!salaExistente.getId().equals(idIgnorado))
+                    throw new IllegalArgumentException("Ação bloqueada: Já existe uma sala cadastrada como '" + salaExistente.getNome() + "'.");
+            }
+        }
     }
 }

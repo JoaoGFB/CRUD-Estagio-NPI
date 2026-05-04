@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../service/api';
 import { useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 
 interface Sala {
   id: number;
@@ -98,7 +99,12 @@ export const Salas = () => {
         setSalas((prev) => prev.filter((s) => s.id !== id));
       } catch (error) {
         console.error('Erro ao deletar sala:', error);
-        alert('Erro ao excluir sala.');
+        
+        if (isAxiosError(error) && error.response && typeof error.response.data === 'string') {
+          alert(error.response.data);
+        } else {
+          alert('Erro ao excluir sala.');
+        }
       }
     }
   };
