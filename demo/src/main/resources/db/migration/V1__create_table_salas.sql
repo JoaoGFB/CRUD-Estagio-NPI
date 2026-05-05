@@ -4,7 +4,7 @@ CREATE TABLE sala (
     campus VARCHAR(100) NOT NULL,
     capacidade INT NOT NULL,
     interdisciplinar BOOLEAN NOT NULL DEFAULT FALSE,
-    curso_vinculado VARCHAR(100) -- Fica nulo se a sala for interdisciplinar
+    curso_vinculado VARCHAR(100) --fica nulo se a sala for interdisciplinar
 );
 
 CREATE TABLE tag (

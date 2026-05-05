@@ -6,6 +6,7 @@ import com.example.demo.service.DisciplinaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 
@@ -35,5 +36,21 @@ public class DisciplinaController {
     @GetMapping("/coordenador/{id}")
     public ResponseEntity<List<DisciplinaResponseDTO>> getByCoordenador(@PathVariable Long id) {
         return ResponseEntity.ok(disciplinaService.getDisciplinasByCoordenador(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<DisciplinaResponseDTO> update(@PathVariable Long id, @RequestBody DisciplinaRequestDTO dto) {
+        return ResponseEntity.ok(disciplinaService.atualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        disciplinaService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<String> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return ResponseEntity.badRequest().body("Ação bloqueada: Não é possível excluir esta disciplina pois ela já possui vínculos (ex: reservas agendadas).");
     }
 }

@@ -19,14 +19,15 @@ public class TokenService {
 
     public String gerarToken(Usuario usuario) {
         try {
-            //algoritmo de criptografia
             Algorithm algorithm = Algorithm.HMAC256(secret);
 
             return JWT.create()
-                    .withIssuer("api-reserva-salas") //quem gerou o token (a API)
-                    .withSubject(usuario.getLogin()) //quem é o dono do token (o email do usuário)
-                    .withExpiresAt(gerarDataExpiracao()) //quando o token vence
-                    .sign(algorithm); //gera a String final
+                    .withIssuer("api-reserva-salas")
+                    .withSubject(usuario.getLogin())
+                    //injeção da role no payload do token
+                    .withClaim("role", usuario.getRole())
+                    .withExpiresAt(gerarDataExpiracao())
+                    .sign(algorithm);
         } catch (JWTCreationException exception) {
             throw new RuntimeException("Erro ao gerar token JWT", exception);
         }

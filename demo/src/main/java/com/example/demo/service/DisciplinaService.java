@@ -45,6 +45,29 @@ public class DisciplinaService {
         return mapToResponse(salva);
     }
 
+    // UPDATE
+    public DisciplinaResponseDTO atualizar(Long id, DisciplinaRequestDTO dto) {
+        Disciplina disciplina = disciplinaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Disciplina não encontrada"));
+
+        disciplina.setNome(dto.getNome());
+
+        if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
+            List<Tag> novasTags = tagRepository.findAllById(dto.getTagIds());
+            disciplina.setTagsExigidas(novasTags);
+        } else
+            disciplina.getTagsExigidas().clear();
+
+        Disciplina atualizada = disciplinaRepository.save(disciplina);
+        return mapToResponse(atualizada);
+    }
+
+    public void deletar(Long id) {
+        if (!disciplinaRepository.existsById(id))
+            throw new RuntimeException("Disciplina não encontrada");
+        disciplinaRepository.deleteById(id);
+    }
+
     public List<DisciplinaResponseDTO> getAllDisciplinas() {
         return disciplinaRepository.findAll().stream()
                 .map(this::mapToResponse)
