@@ -45,7 +45,7 @@ public class DisciplinaService {
         return mapToResponse(salva);
     }
 
-    // UPDATE
+
     public DisciplinaResponseDTO atualizar(Long id, DisciplinaRequestDTO dto) {
         Disciplina disciplina = disciplinaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Disciplina não encontrada"));
