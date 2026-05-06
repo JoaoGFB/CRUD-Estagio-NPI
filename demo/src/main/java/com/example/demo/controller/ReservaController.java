@@ -44,4 +44,10 @@ public class ReservaController {
     public ResponseEntity<String> handleRegrasDeNegocio(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(ex.getMessage());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        reservaService.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
 }

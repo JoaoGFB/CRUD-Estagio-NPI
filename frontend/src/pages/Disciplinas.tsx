@@ -4,10 +4,11 @@ import api from '../service/api';
 import { isAxiosError } from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 
-// --- INTERFACES ---
+//interfaces
 interface Tag { id: number; nome: string; }
 interface Disciplina { id: number; nome: string; nomeCoordenador: string; tagsExigidas: string[]; }
-interface Sala { id: number; nome: string; }
+//propriedade 'tags' (opcional) na sala para o filtro funcionar
+interface Sala { id: number; nome: string; tags?: string[]; }
 interface Reserva { 
   id: number; 
   nomeSala: string; 
@@ -33,7 +34,6 @@ export const Disciplinas = () => {
   const isCoordenador = role === 'COORDENADOR';
   const isGestor = role === 'GESTOR';
 
-  //estados do sistema
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
   const [salas, setSalas] = useState<Sala[]>([]);
@@ -41,19 +41,16 @@ export const Disciplinas = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [idEditando, setIdEditando] = useState<number | null>(null);
 
-  //estados modal reserva
   const [modalReservaAberto, setModalReservaAberto] = useState(false);
   const [disciplinaParaEnsalar, setDisciplinaParaEnsalar] = useState<Disciplina | null>(null);
   const [formReserva, setFormReserva] = useState({ salaId: '', data: '', horarioInicio: '', horarioFim: '' });
 
   const { register, handleSubmit, reset, setValue } = useForm<NovaDisciplinaForm>();
 
-  //busca geral de dados
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [disciplinasRes, tagsRes, salasRes, reservasRes] = await Promise.all([
-          // Alterado para usar o userId dinâmico
           isCoordenador ? api.get(`/disciplinas/coordenador/${userId}`) : api.get('/disciplinas'),
           api.get('/tags'),
           api.get('/salas'),
@@ -68,7 +65,7 @@ export const Disciplinas = () => {
       }
     };
     fetchData();
-  }, [refreshTrigger, isCoordenador, userId]); // Adicionado userId nas dependências
+  }, [refreshTrigger, isCoordenador, userId]);
 
   const recarregarLista = () => setRefreshTrigger((prev) => prev + 1);
 
@@ -90,7 +87,6 @@ export const Disciplinas = () => {
     try {
       const payload = {
         nome: data.nome,
-        // Alterado para usar o ID de quem está logado
         coordenadorId: userId || 0, 
         tagIds: data.tagIds ? data.tagIds.map(Number) : []
       };
@@ -126,7 +122,23 @@ export const Disciplinas = () => {
     }
   };
 
-  //lógica de reserva/ensalamento
+  //lógia da reserva/ensalamento
+  //lógica do filtro ABAC para as salas
+  const getSalasCompativeis = () => {
+    if (!disciplinaParaEnsalar) return [];
+    
+    const exigencias = disciplinaParaEnsalar.tagsExigidas;
+    
+    //se a matéria não exige nada, todas as salas servem!
+    if (exigencias.length === 0) return salas;
+
+    return salas.filter(sala => {
+      //verifica se a sala possui todas as tags que a matéria pede
+      const tagsDaSala = sala.tags || []; //proteção se a api não traga as tags da sala
+      return exigencias.every(exigencia => tagsDaSala.includes(exigencia));
+    });
+  };
+
   const abrirModalReserva = (disciplina: Disciplina) => {
     setDisciplinaParaEnsalar(disciplina);
     setFormReserva({ salaId: '', data: '', horarioInicio: '', horarioFim: '' });
@@ -171,9 +183,28 @@ export const Disciplinas = () => {
     }
   };
 
+  //função para o gestor excluir/cancelar uma reserva
+  const deletarReserva = async (idReserva: number) => {
+    if (window.confirm("ATENÇÃO GESTOR: Tem certeza que deseja cancelar esta reserva? A disciplina voltará a ficar sem sala.")) {
+      try {
+        await api.delete(`/reservas/${idReserva}`);
+        alert('Reserva cancelada com sucesso!');
+        recarregarLista();
+      } catch (error) {
+        if (isAxiosError(error) && error.response && typeof error.response.data === 'string') {
+          alert(error.response.data);
+        } else {
+          alert('Erro ao cancelar reserva.');
+        }
+      }
+    }
+  };
+
   const getReservaDaDisciplina = (nomeDisciplina: string) => {
     return reservas.find(r => r.nomeDisciplina === nomeDisciplina);
   };
+
+  const salasDisponiveis = getSalasCompativeis();
 
   return (
     <div className="tags-page">
@@ -276,10 +307,18 @@ export const Disciplinas = () => {
                           </span>
                         </div>
                         
-                        {isGestor && reservaVinculada.status === 'PENDENTE' && (
-                          <button className="btn btn-success" style={{ marginTop: '0.5rem', width: '100%' }} onClick={() => aprovarReserva(reservaVinculada.id)}>
-                            <IconCheck /> Aprovar Solicitação
-                          </button>
+                        {/*ações do gestor na reserva*/}
+                        {isGestor && (
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                            {reservaVinculada.status === 'PENDENTE' && (
+                              <button className="btn btn-success" style={{ flex: 1, padding: '0.4rem' }} onClick={() => aprovarReserva(reservaVinculada.id)}>
+                                <IconCheck /> Aprovar
+                              </button>
+                            )}
+                            <button className="btn btn-danger" style={{ flex: reservaVinculada.status === 'PENDENTE' ? 1 : '100%', padding: '0.4rem' }} onClick={() => deletarReserva(reservaVinculada.id)}>
+                              <IconTrash /> Cancelar
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}
@@ -304,23 +343,26 @@ export const Disciplinas = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '450px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Agendar: {disciplinaParaEnsalar?.nome}</h3>
-            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Selecione a sala e defina o horário da aula.</p>
+            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Selecione uma das salas compatíveis com os requisitos.</p>
             
             <form onSubmit={solicitarReserva} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label className="form-label">Sala Disponível *</label>
-                <select 
-                  className="form-input" 
-                  required 
-                  value={formReserva.salaId} 
-                  onChange={e => setFormReserva({...formReserva, salaId: e.target.value})}
-                >
-                  <option value="">Selecione uma sala...</option>
-                  {salas.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
-                </select>
-                <small style={{ color: '#999', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
-                  O sistema bloqueará a ação se a sala não possuir os requisitos da matéria.
-                </small>
+                <label className="form-label">Sala Compatível *</label>
+                {salasDisponiveis.length === 0 ? (
+                  <div style={{ color: '#dc3545', fontSize: '0.9rem', padding: '0.5rem', backgroundColor: '#f8d7da', borderRadius: '4px' }}>
+                    Nenhuma sala cadastrada atende aos requisitos desta disciplina.
+                  </div>
+                ) : (
+                  <select 
+                    className="form-input" 
+                    required 
+                    value={formReserva.salaId} 
+                    onChange={e => setFormReserva({...formReserva, salaId: e.target.value})}
+                  >
+                    <option value="">Selecione uma sala...</option>
+                    {salasDisponiveis.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -341,7 +383,7 @@ export const Disciplinas = () => {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setModalReservaAberto(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Solicitar Reserva</button>
+                <button type="submit" className="btn btn-primary" disabled={salasDisponiveis.length === 0}>Solicitar Reserva</button>
               </div>
             </form>
           </div>

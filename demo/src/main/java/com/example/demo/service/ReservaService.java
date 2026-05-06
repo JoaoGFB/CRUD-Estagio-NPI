@@ -87,6 +87,13 @@ public class ReservaService {
                 .collect(Collectors.toList());
     }
 
+    public void deletar(Long id) {
+        if (!reservaRepository.existsById(id)) {
+            throw new RuntimeException("Reserva não encontrada");
+        }
+        reservaRepository.deleteById(id);
+    }
+
     private ReservaResponseDTO mapToResponse(Reserva reserva) {
         ReservaResponseDTO dto = new ReservaResponseDTO();
         dto.setId(reserva.getId());
