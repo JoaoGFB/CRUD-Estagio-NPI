@@ -27,6 +27,9 @@ public class Usuario implements UserDetails {
     @Column(name = "curso")
     private String curso;
 
+    @Column(name = "campus")
+    private String campus; //ex: "IPOLON", "SEDE", "CANADA"
+
     public Long getId() {
         return id;
     }
@@ -56,6 +59,12 @@ public class Usuario implements UserDetails {
     }
     public void setCurso(String curso) {
         this.curso = curso;
+    }
+    public String getCampus() {
+        return campus;
+    }
+    public void setCampus(String campus) {
+        this.campus = campus;
     }
 
     @Override

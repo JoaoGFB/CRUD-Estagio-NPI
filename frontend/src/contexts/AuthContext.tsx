@@ -4,14 +4,15 @@ interface AuthContextData {
   signed: boolean;
   role: string | null;
   userId: number | null; 
-  curso: string | null; 
+  curso: string | null;
+  campus: string | null;
   login: (token: string) => void;
   logout: () => void;
 }
 
 const decodificarToken = (jwtToken: string) => {
   try {
-    if (!jwtToken || !jwtToken.includes('.')) return { role: null, id: null, curso: null };
+    if (!jwtToken || !jwtToken.includes('.')) return { role: null, id: null, curso: null, campus: null };
 
     const base64Url = jwtToken.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -26,11 +27,12 @@ const decodificarToken = (jwtToken: string) => {
     return { 
       role: payload.role || null, 
       id: payload.id || null,
-      curso: payload.curso || null 
+      curso: payload.curso || null,
+      campus: payload.campus || null //pega o token gerado pelo java
     };
   } catch (error) {
     console.error("Erro ao decodificar token:", error);
-    return { role: null, id: null, curso: null };
+    return { role: null, id: null, curso: null, campus: null };
   }
 };
 
@@ -40,18 +42,24 @@ export const AuthContext = createContext<AuthContextData>({} as AuthContextData)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('@NPI_Token'));
   
-  const tokenData = token ? decodificarToken(token) : { role: null, id: null, curso: null };
+  const tokenData = token ? decodificarToken(token) : { role: null, id: null, curso: null, campus: null };
+  
   const [role, setRole] = useState<string | null>(tokenData.role);
   const [userId, setUserId] = useState<number | null>(tokenData.id);
-  const [curso, setCurso] = useState<string | null>(tokenData.curso); // <- ESTADO DO CURSO
+  const [curso, setCurso] = useState<string | null>(tokenData.curso); 
+  
+  //cria um estado que vai segurar o valor do campus
+  const [campus, setCampus] = useState<string | null>(tokenData.campus); 
 
   const login = (newToken: string) => {
     localStorage.setItem('@NPI_Token', newToken);
     setToken(newToken);
     const decoded = decodificarToken(newToken);
+    
     setRole(decoded.role);
     setUserId(decoded.id); 
-    setCurso(decoded.curso); // <- SALVANDO NO LOGIN
+    setCurso(decoded.curso); 
+    setCampus(decoded.campus);
   };
 
   const logout = () => {
@@ -60,10 +68,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRole(null);
     setUserId(null); 
     setCurso(null); 
+    setCampus(null);
   };
 
   return (
-    <AuthContext.Provider value={{ signed: !!token, role, userId, curso, login, logout }}>
+    <AuthContext.Provider value={{ signed: !!token, role, userId, curso, campus, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

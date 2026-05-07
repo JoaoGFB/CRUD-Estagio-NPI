@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../service/api';
+import { AuthContext } from '../contexts/AuthContext';
 
 interface Tag {
   id: number;
@@ -10,7 +11,6 @@ interface Tag {
 
 interface NovaSalaForm {
   nome: string;
-  campus: string;
   capacidade: number;
   interdisciplinar: boolean;
   cursoVinculado: string;
@@ -89,6 +89,7 @@ const IconAlert = () => (
 export const NovaSala = () => {
   const { id } = useParams();
   const isEditing = !!id;
+  const { campus } = useContext(AuthContext); //traz o campus do gestor logado
 
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
   const navigate = useNavigate();
@@ -118,7 +119,6 @@ export const NovaSala = () => {
 
           reset({
             nome: sala.nome,
-            campus: sala.campus,
             capacidade: sala.capacidade,
             interdisciplinar: sala.interdisciplinar,
             cursoVinculado: sala.cursoVinculado || '',
@@ -137,6 +137,7 @@ export const NovaSala = () => {
     try {
       const payload = {
         ...data,
+        campus: campus, //envia o campus do gestor (forçadamente)
         capacidade: Number(data.capacidade),
         cursoVinculado: data.interdisciplinar ? '' : data.cursoVinculado,
         tagIds: data.tagIds ? data.tagIds.map(Number) : [],
@@ -194,20 +195,15 @@ export const NovaSala = () => {
             <div className="form-group">
               <label className="form-label">
                 <IconMapPin />
-                Campus *
+                Campus Vinculado
               </label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="Ex: Campus Central"
-                {...register('campus', { required: 'Campus é obrigatório' })}
+                value={campus || ''}
+                disabled
+                style={{ cursor: 'not-allowed', backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
               />
-              {errors.campus && (
-                <span className="form-error">
-                  <IconAlert />
-                  {errors.campus.message}
-                </span>
-              )}
             </div>
           </div>
 

@@ -28,6 +28,7 @@ public class TokenService {
                     .withClaim("role", usuario.getRole())
                     .withClaim("id", usuario.getId())
                     .withClaim("curso", usuario.getCurso())
+                    .withClaim("campus", usuario.getCampus())
                     .withExpiresAt(gerarDataExpiracao())
                     .sign(algorithm);
         } catch (JWTCreationException exception) {

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import api from '../service/api';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
+import { AuthContext } from '../contexts/AuthContext';
 
 interface Sala {
   id: number;
@@ -77,11 +78,20 @@ export const Salas = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Traz o role e o campus do usuário atual do contexto
+  const { role, campus } = useContext(AuthContext);
+
   useEffect(() => {
     const buscarSalas = async () => {
       try {
         const response = await api.get('/salas');
-        setSalas(response.data);
+        
+        // Aplica o filtro de visualização por Campus!
+        const salasFiltradas = role === 'GESTOR' && campus
+          ? response.data.filter((s: Sala) => s.campus === campus)
+          : response.data;
+          
+        setSalas(salasFiltradas);
       } catch (error) {
         console.error('Erro ao buscar salas:', error);
         alert('Sua sessão expirou ou ocorreu um erro.');
@@ -90,7 +100,7 @@ export const Salas = () => {
       }
     };
     buscarSalas();
-  }, []);
+  }, [role, campus]);
 
   const deletarSala = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir esta sala?')) {
@@ -125,7 +135,7 @@ export const Salas = () => {
         <div className="page-header" style={{ marginBottom: 0 }}>
           <h2>
             <IconDoor />
-            Catálogo de Salas
+            Catálogo de Salas ({campus})
           </h2>
           <p>{salas.length} {salas.length === 1 ? 'sala disponível' : 'salas disponíveis'}</p>
         </div>
@@ -142,7 +152,7 @@ export const Salas = () => {
       {salas.length === 0 ? (
         <div className="empty-state">
           <IconInbox />
-          <p>Nenhuma sala cadastrada ainda.</p>
+          <p>Nenhuma sala cadastrada no seu campus ainda.</p>
           <button
             className="btn btn-primary"
             style={{ marginTop: '16px' }}
