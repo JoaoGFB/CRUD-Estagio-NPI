@@ -55,9 +55,7 @@ export const Disciplinas = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try { 
-        //se for gestor, busca apenas reservas do campus dele.
-        //se for coordenador, busca todas.
+      try {
         const urlReservas = (isGestor && campus) 
           ? `/reservas/campus/${campus}` 
           : '/reservas';
@@ -69,7 +67,16 @@ export const Disciplinas = () => {
           api.get(urlReservas)
         ]);
         
-        setDisciplinas(disciplinasRes.data);
+        let disciplinasParaMostrar = disciplinasRes.data;
+        
+        if (isGestor) {
+          //o gestor só vê o card se a matéria tiver uma reserva (pendente ou aprovada) no campus dele
+          disciplinasParaMostrar = disciplinasRes.data.filter((disciplina: Disciplina) => 
+            reservasRes.data.some((reserva: Reserva) => reserva.nomeDisciplina === disciplina.nome)
+          );
+        }
+
+        setDisciplinas(disciplinasParaMostrar);
         setTagsDisponiveis(tagsRes.data);
         setSalas(salasRes.data);
         setReservas(reservasRes.data);
@@ -272,7 +279,11 @@ export const Disciplinas = () => {
         <div className="tag-list-header"><h3>Status de Ensalamento</h3></div>
         
         {disciplinas.length === 0 ? (
-          <div className="empty-state"><p>Nenhuma disciplina encontrada.</p></div>
+          <div className="empty-state">
+            <p>
+              {isGestor ? 'Caixa de entrada limpa! Nenhuma solicitação de reserva para o seu campus.' : 'Nenhuma disciplina encontrada.'}
+            </p>
+          </div>
         ) : (
           <div className="rooms-grid" style={{ marginTop: '1rem' }}>
             {disciplinas.map((disciplina) => {
