@@ -87,6 +87,12 @@ public class ReservaService {
                 .collect(Collectors.toList());
     }
 
+    public List<ReservaResponseDTO> listarReservasPorCampus(String campus) {
+        return reservaRepository.findBySalaCampus(campus).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     public void deletar(Long id) {
         if (!reservaRepository.existsById(id)) {
             throw new RuntimeException("Reserva não encontrada");

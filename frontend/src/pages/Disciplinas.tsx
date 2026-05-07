@@ -7,7 +7,6 @@ import { AuthContext } from '../contexts/AuthContext';
 //interfaces
 interface Tag { id: number; nome: string; }
 interface Disciplina { id: number; nome: string; nomeCoordenador: string; tagsExigidas: string[]; }
-//propriedade 'tags' (opcional) na sala para o filtro funcionar
 interface Sala { 
   id: number; 
   nome: string; 
@@ -36,7 +35,8 @@ const IconCalendar = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const IconCheck = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
 
 export const Disciplinas = () => {
-  const { role, userId, curso } = useContext(AuthContext); 
+  //extração do campus do contexto
+  const { role, userId, curso, campus } = useContext(AuthContext); 
   const isCoordenador = role === 'COORDENADOR';
   const isGestor = role === 'GESTOR';
 
@@ -55,13 +55,20 @@ export const Disciplinas = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
+      try { 
+        //se for gestor, busca apenas reservas do campus dele.
+        //se for coordenador, busca todas.
+        const urlReservas = (isGestor && campus) 
+          ? `/reservas/campus/${campus}` 
+          : '/reservas';
+
         const [disciplinasRes, tagsRes, salasRes, reservasRes] = await Promise.all([
           isCoordenador ? api.get(`/disciplinas/coordenador/${userId}`) : api.get('/disciplinas'),
           api.get('/tags'),
           api.get('/salas'),
-          api.get('/reservas')
+          api.get(urlReservas)
         ]);
+        
         setDisciplinas(disciplinasRes.data);
         setTagsDisponiveis(tagsRes.data);
         setSalas(salasRes.data);
@@ -71,7 +78,7 @@ export const Disciplinas = () => {
       }
     };
     fetchData();
-  }, [refreshTrigger, isCoordenador, userId]);
+  }, [refreshTrigger, isCoordenador, isGestor, userId, campus]);
 
   const recarregarLista = () => setRefreshTrigger((prev) => prev + 1);
 
@@ -128,20 +135,19 @@ export const Disciplinas = () => {
     }
   };
 
-  //lógia da reserva/ensalamento
   //lógica do filtro ABAC para as salas
   const getSalasCompativeis = () => {
     if (!disciplinaParaEnsalar) return [];
     
     const exigencias = disciplinaParaEnsalar.tagsExigidas;
-    const meuCursoNormalizado = curso?.trim().toLowerCase();//converte o curso para minúsculo
+    const meuCursoNormalizado = curso?.trim().toLowerCase();
 
     return salas.filter(sala => {
       const cursoSalaNormalizado = sala.cursoVinculado?.trim().toLowerCase();
       //a sala será liberada se for Interdisciplinar ou se o curso dela for igual ao curso do coordenador
       const temPermissaoDeAcesso = sala.interdisciplinar === true || cursoSalaNormalizado === meuCursoNormalizado;
 
-      //se o coordenador e não tiver permissão, esconde a sala
+      //se for coordenador e não tiver permissão, esconde a sala
       if (isCoordenador && !temPermissaoDeAcesso) 
         return false;
       
@@ -149,7 +155,7 @@ export const Disciplinas = () => {
       if (exigencias.length === 0) return true;
 
       const tagsDaSala = sala.tags || []; 
-      return exigencias.every(exigencia => tagsDaSala.includes(exigencia)); //deve ter todos os requisitos que a matéria pede
+      return exigencias.every(exigencia => tagsDaSala.includes(exigencia));
     });
   };
 

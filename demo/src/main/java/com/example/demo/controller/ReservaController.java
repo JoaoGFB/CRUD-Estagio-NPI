@@ -50,4 +50,9 @@ public class ReservaController {
         reservaService.deletar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/campus/{campus}")
+    public ResponseEntity<List<ReservaResponseDTO>> listarPorCampus(@PathVariable String campus) {
+        return ResponseEntity.ok(reservaService.listarReservasPorCampus(campus));
+    }
 }

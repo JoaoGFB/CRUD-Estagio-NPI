@@ -25,4 +25,5 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     //para o Gestor ver o calendário de uma sala específica
     List<Reserva> findBySalaIdAndData(Long salaId, LocalDate data);
+    List<Reserva> findBySalaCampus(String campus);
 }
