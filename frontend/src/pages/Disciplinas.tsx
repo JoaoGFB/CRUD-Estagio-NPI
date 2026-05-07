@@ -8,7 +8,13 @@ import { AuthContext } from '../contexts/AuthContext';
 interface Tag { id: number; nome: string; }
 interface Disciplina { id: number; nome: string; nomeCoordenador: string; tagsExigidas: string[]; }
 //propriedade 'tags' (opcional) na sala para o filtro funcionar
-interface Sala { id: number; nome: string; tags?: string[]; }
+interface Sala { 
+  id: number; 
+  nome: string; 
+  tags?: string[]; 
+  interdisciplinar: boolean; 
+  cursoVinculado: string | null; 
+}
 interface Reserva { 
   id: number; 
   nomeSala: string; 
@@ -30,7 +36,7 @@ const IconCalendar = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const IconCheck = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
 
 export const Disciplinas = () => {
-  const { role, userId } = useContext(AuthContext); 
+  const { role, userId, curso } = useContext(AuthContext); 
   const isCoordenador = role === 'COORDENADOR';
   const isGestor = role === 'GESTOR';
 
@@ -128,14 +134,22 @@ export const Disciplinas = () => {
     if (!disciplinaParaEnsalar) return [];
     
     const exigencias = disciplinaParaEnsalar.tagsExigidas;
-    
-    //se a matéria não exige nada, todas as salas servem!
-    if (exigencias.length === 0) return salas;
+    const meuCursoNormalizado = curso?.trim().toLowerCase();//converte o curso para minúsculo
 
     return salas.filter(sala => {
-      //verifica se a sala possui todas as tags que a matéria pede
-      const tagsDaSala = sala.tags || []; //proteção se a api não traga as tags da sala
-      return exigencias.every(exigencia => tagsDaSala.includes(exigencia));
+      const cursoSalaNormalizado = sala.cursoVinculado?.trim().toLowerCase();
+      //a sala será liberada se for Interdisciplinar ou se o curso dela for igual ao curso do coordenador
+      const temPermissaoDeAcesso = sala.interdisciplinar === true || cursoSalaNormalizado === meuCursoNormalizado;
+
+      //se o coordenador e não tiver permissão, esconde a sala
+      if (isCoordenador && !temPermissaoDeAcesso) 
+        return false;
+      
+      //validação das tags
+      if (exigencias.length === 0) return true;
+
+      const tagsDaSala = sala.tags || []; 
+      return exigencias.every(exigencia => tagsDaSala.includes(exigencia)); //deve ter todos os requisitos que a matéria pede
     });
   };
 

@@ -2,7 +2,8 @@ CREATE TABLE usuario (
     id BIGSERIAL PRIMARY KEY,
     login VARCHAR(100) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL --'GESTOR' ou 'COORDENADOR'
+    role VARCHAR(50) NOT NULL, --'GESTOR' ou 'COORDENADOR'
+    curso VARCHAR(100)
 );
 
 INSERT INTO usuario (login, senha, role)

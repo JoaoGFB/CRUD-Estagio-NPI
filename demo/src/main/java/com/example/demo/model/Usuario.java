@@ -24,6 +24,9 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, length = 50)
     private String role;
 
+    @Column(name = "curso")
+    private String curso;
+
     public Long getId() {
         return id;
     }
@@ -47,6 +50,12 @@ public class Usuario implements UserDetails {
     }
     public void setRole(String role) {
         this.role = role;
+    }
+    public String getCurso() {
+        return curso;
+    }
+    public void setCurso(String curso) {
+        this.curso = curso;
     }
 
     @Override

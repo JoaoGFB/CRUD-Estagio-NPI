@@ -4,14 +4,14 @@ interface AuthContextData {
   signed: boolean;
   role: string | null;
   userId: number | null; 
+  curso: string | null; 
   login: (token: string) => void;
   logout: () => void;
 }
 
-//extrai a role e o id
 const decodificarToken = (jwtToken: string) => {
   try {
-    if (!jwtToken || !jwtToken.includes('.')) return { role: null, id: null };
+    if (!jwtToken || !jwtToken.includes('.')) return { role: null, id: null, curso: null };
 
     const base64Url = jwtToken.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -25,11 +25,12 @@ const decodificarToken = (jwtToken: string) => {
     const payload = JSON.parse(jsonPayload);
     return { 
       role: payload.role || null, 
-      id: payload.id || null 
+      id: payload.id || null,
+      curso: payload.curso || null 
     };
   } catch (error) {
     console.error("Erro ao decodificar token:", error);
-    return { role: null, id: null };
+    return { role: null, id: null, curso: null };
   }
 };
 
@@ -39,35 +40,30 @@ export const AuthContext = createContext<AuthContextData>({} as AuthContextData)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('@NPI_Token'));
   
-  const [role, setRole] = useState<string | null>(() => {
-    const storedToken = localStorage.getItem('@NPI_Token');
-    return storedToken ? decodificarToken(storedToken).role : null;
-  });
-
-  //estado para guardar o id do usuário
-  const [userId, setUserId] = useState<number | null>(() => {
-    const storedToken = localStorage.getItem('@NPI_Token');
-    return storedToken ? decodificarToken(storedToken).id : null;
-  });
+  const tokenData = token ? decodificarToken(token) : { role: null, id: null, curso: null };
+  const [role, setRole] = useState<string | null>(tokenData.role);
+  const [userId, setUserId] = useState<number | null>(tokenData.id);
+  const [curso, setCurso] = useState<string | null>(tokenData.curso); // <- ESTADO DO CURSO
 
   const login = (newToken: string) => {
     localStorage.setItem('@NPI_Token', newToken);
     setToken(newToken);
     const decoded = decodificarToken(newToken);
     setRole(decoded.role);
-    setUserId(decoded.id); //salva o id no login
+    setUserId(decoded.id); 
+    setCurso(decoded.curso); // <- SALVANDO NO LOGIN
   };
 
   const logout = () => {
     localStorage.removeItem('@NPI_Token');
     setToken(null);
     setRole(null);
-    setUserId(null); //limpa o id no logout
+    setUserId(null); 
+    setCurso(null); 
   };
 
   return (
-    //passa o userid ara os outros componentes
-    <AuthContext.Provider value={{ signed: !!token, role, userId, login, logout }}>
+    <AuthContext.Provider value={{ signed: !!token, role, userId, curso, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

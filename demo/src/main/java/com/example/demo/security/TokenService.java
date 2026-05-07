@@ -27,6 +27,7 @@ public class TokenService {
                     //injeção da role no payload do token
                     .withClaim("role", usuario.getRole())
                     .withClaim("id", usuario.getId())
+                    .withClaim("curso", usuario.getCurso())
                     .withExpiresAt(gerarDataExpiracao())
                     .sign(algorithm);
         } catch (JWTCreationException exception) {
