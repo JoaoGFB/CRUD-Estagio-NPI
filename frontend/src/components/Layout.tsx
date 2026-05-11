@@ -46,6 +46,12 @@ const IconBuilding = () => (
   </svg>
 );
 
+const IconUsersMenu = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
 export const Layout = ({ children }: LayoutProps) => {
   const { logout, role, nome, email, curso, campus } = useContext(AuthContext);
   const location = useLocation();
@@ -69,7 +75,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
         <span className="sidebar-section-label">Menu</span>
 
-        {/*bloqueio de RBAC: só o GESTOR renderiza esses dois botões */}
+        {/*bloqueio de RBAC: só o gestor renderiza esses dois botões */}
         {role === 'GESTOR' && (
           <>
             <Link to="/" className={`sidebar-link ${isActive('/') ? 'active' : ''}`}>
@@ -81,6 +87,14 @@ export const Layout = ({ children }: LayoutProps) => {
               <IconTags />
               Tags
             </Link>
+
+        {/*bloqueio de admin, só o gestor da sede vê o botão*/}
+        {role === 'GESTOR' && campus === 'SEDE' && (
+          <Link to="/usuarios" className={`sidebar-link ${isActive('/usuarios') ? 'active' : ''}`}>
+            <IconUsersMenu />
+            Equipa
+          </Link>
+        )}
           </>
         )}
 

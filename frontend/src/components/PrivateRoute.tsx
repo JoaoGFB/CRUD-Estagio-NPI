@@ -5,40 +5,39 @@ import { AuthContext } from '../contexts/AuthContext';
 interface PrivateRouteProps {
   children: ReactNode;
   rolesRequeridos?: string[];
+  campusRequerido?: string;
 }
 
-export const PrivateRoute = ({ children, rolesRequeridos }: PrivateRouteProps) => {
-  const { signed, role } = useContext(AuthContext);
-  const location = useLocation(); //descobre a url do momento atual
+export const PrivateRoute = ({ children, rolesRequeridos, campusRequerido }: PrivateRouteProps) => {
+  const { signed, role, campus } = useContext(AuthContext);
+  const location = useLocation();
 
   if (!signed) {
     return <Navigate to="/login" replace />;
   }
 
-  //verifica se a rota exige uma permissão que o suário não tem
-  if (rolesRequeridos && role && !rolesRequeridos.includes(role)) {
-    
-    //define para onde o usuário deve ser redirecionado
+  //verifica se tem a role correta
+  const roleInvalida = rolesRequeridos && role && !rolesRequeridos.includes(role);
+  
+  //verifica se tem o campus correto (quando a tela exigir)
+  const campusInvalido = campusRequerido && campus !== campusRequerido;
+
+  if (roleInvalida || campusInvalido) {
     const destinoPadrao = role === 'COORDENADOR' ? '/disciplinas' : '/';
 
-    //se já estiver na tela de destino, para o redirecionamento
     if (location.pathname === destinoPadrao) {
       return (
         <div style={{ padding: '3rem', textAlign: 'center', fontFamily: 'sans-serif' }}>
           <h2>🚨 Bloqueio de Segurança / Loop Evitado</h2>
-          <p>O sistema tentou te enviar para <b>{destinoPadrao}</b>, mas seu cargo (<b>{role}</b>) não foi reconhecido nas regras de permissão dessa página.</p>
-          <p>As regras exigiam: <b>{rolesRequeridos.join(', ')}</b></p>
+          <p>Você não tem privilégios de <b>Super Admin (Sede)</b> para acessar esta tela.</p>
           <button onClick={() => { localStorage.clear(); window.location.href='/login'; }}>
             Limpar Dados e Sair
           </button>
         </div>
       );
     }
-
-    //se não for loop redireciona normalmente
     return <Navigate to={destinoPadrao} replace />;
   }
 
-  //exibe a tela normalmente
   return <>{children}</>;
 };

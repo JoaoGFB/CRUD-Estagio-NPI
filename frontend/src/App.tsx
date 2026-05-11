@@ -7,9 +7,8 @@ import { Salas } from './pages/Salas';
 import { NovaSala } from './pages/NovaSala';
 import { Tags } from './pages/Tags';
 import { Disciplinas } from './pages/Disciplinas';
-
-//import da guarda de rotas
-import { PrivateRoute } from './components/PrivateRoute';
+import { Usuarios } from './pages/Usuarios';
+import { PrivateRoute } from './components/PrivateRoute';//import da guarda de rotas
 
 const RoutesConfig = () => {
   //extração da role do contexto para fazer o redirecionamento no login
@@ -20,8 +19,7 @@ const RoutesConfig = () => {
       {/*se já estiver logado, joga para a tela inicial correta do seu cargo */}
       <Route 
         path="/login" 
-        element={signed ? <Navigate to={role === 'COORDENADOR' ? '/disciplinas' : '/'} /> : <Login />} 
-      />
+        element={signed ? <Navigate to={role === 'COORDENADOR' ? '/disciplinas' : '/'} /> : <Login />}/>
       
      
       {/*ROTAS EXCLUSIVAS DO GESTOR*/}
@@ -31,8 +29,7 @@ const RoutesConfig = () => {
           <PrivateRoute rolesRequeridos={['GESTOR']}>
             <Layout><Salas /></Layout>
           </PrivateRoute>
-        } 
-      />
+        }/>
       
       <Route 
         path="/salas/nova" 
@@ -40,8 +37,7 @@ const RoutesConfig = () => {
           <PrivateRoute rolesRequeridos={['GESTOR']}>
             <Layout><NovaSala /></Layout>
           </PrivateRoute>
-        } 
-      />
+        }/>
       
       <Route 
         path="/salas/editar/:id" 
@@ -49,14 +45,29 @@ const RoutesConfig = () => {
           <PrivateRoute rolesRequeridos={['GESTOR']}>
             <Layout><NovaSala /></Layout>
           </PrivateRoute>
-        } 
-      />
+        }/>
       
       <Route 
         path="/tags" 
         element={
           <PrivateRoute rolesRequeridos={['GESTOR']}>
             <Layout><Tags /></Layout>
+          </PrivateRoute>
+        }/>
+
+      <Route 
+        path="/usuarios" 
+        element={
+          <PrivateRoute rolesRequeridos={['GESTOR']}>
+            <Layout><Usuarios /></Layout>
+          </PrivateRoute>
+        }/>
+
+        <Route 
+        path="/usuarios" 
+        element={
+          <PrivateRoute rolesRequeridos={['GESTOR']} campusRequerido="SEDE">//só o gestor da sede tem acesso
+            <Layout><Usuarios /></Layout>
           </PrivateRoute>
         } 
       />
@@ -69,8 +80,7 @@ const RoutesConfig = () => {
           <PrivateRoute rolesRequeridos={['GESTOR', 'COORDENADOR']}>
             <Layout><Disciplinas /></Layout>
           </PrivateRoute>
-        }
-      />
+        }/>
       
       {/*em caso de uma url errada, joga pro início, e o PrivateRoute assume*/}
       <Route path="*" element={<Navigate to="/" />} />
