@@ -18,6 +18,9 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String login;
 
+    @Column(name = "nome", length = 100)
+    private String nome;
+
     @Column(nullable = false)
     private String senha;
 
@@ -65,6 +68,12 @@ public class Usuario implements UserDetails {
     }
     public void setCampus(String campus) {
         this.campus = campus;
+    }
+    public String getNome() {
+        return nome;
+    }
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
     @Override

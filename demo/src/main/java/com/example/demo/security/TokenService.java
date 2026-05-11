@@ -24,8 +24,8 @@ public class TokenService {
             return JWT.create()
                     .withIssuer("api-reserva-salas")
                     .withSubject(usuario.getLogin())
-                    //injeção da role no payload do token
-                    .withClaim("role", usuario.getRole())
+                    .withClaim("nome", usuario.getNome())
+                    .withClaim("role", usuario.getRole())//injeção da role no payload do token
                     .withClaim("id", usuario.getId())
                     .withClaim("curso", usuario.getCurso())
                     .withClaim("campus", usuario.getCampus())

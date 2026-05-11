@@ -47,8 +47,7 @@ const IconBuilding = () => (
 );
 
 export const Layout = ({ children }: LayoutProps) => {
-  //fazer a extração da role do contexto, além da função logout
-  const { logout, role } = useContext(AuthContext);
+  const { logout, role, nome, email, curso, campus } = useContext(AuthContext);
   const location = useLocation();
 
   const isActive = (path: string) =>
@@ -100,6 +99,49 @@ export const Layout = ({ children }: LayoutProps) => {
       </aside>
 
       <main className="main-content">
+        
+        {/*cabeçalho superior do perfil*/}
+        <header style={{ 
+          display: 'flex', justifyContent: 'flex-end', alignItems: 'center', 
+          marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.4)' 
+        }}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: '14px', 
+            background: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(16px)',
+            padding: '8px 10px 8px 20px', borderRadius: '999px',
+            border: '1px solid rgba(255,255,255,0.7)',
+            boxShadow: '0 4px 16px rgba(0, 150, 210, 0.1), inset 0 2px 0 rgba(255,255,255,0.8)'
+          }}>
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontWeight: '800', color: 'var(--ink-900)', fontSize: '0.95rem', lineHeight: '1.2' }}>
+                {nome || 'Usuário NPI'}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--ink-500)', fontWeight: '600' }}>
+                {role === 'GESTOR' ? `Gestão: ${campus}` : `Coordenação: ${curso}`}
+              </span>
+            </div>
+            
+            <div style={{ 
+              width: '42px', height: '42px', borderRadius: '50%', 
+              background: role === 'GESTOR' 
+                ? 'linear-gradient(135deg, var(--mint-300), var(--mint-600))'
+                : 'linear-gradient(135deg, var(--aqua-300), var(--aqua-600))', 
+              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              fontWeight: '900', fontSize: '1.2rem', position: 'relative', overflow: 'hidden',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}>
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+                background: 'linear-gradient(to bottom, rgba(255,255,255,0.6), transparent)',
+                borderRadius: '50% 50% 10px 10px'
+              }}/>
+              <span style={{ position: 'relative', zIndex: 1, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                {nome ? nome.charAt(0).toUpperCase() : (email ? email.charAt(0).toUpperCase() : 'U')}
+              </span>
+            </div>
+          </div>
+        </header>
+
         {children}
       </main>
     </div>
