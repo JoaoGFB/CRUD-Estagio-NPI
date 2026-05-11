@@ -6,6 +6,7 @@ import com.example.demo.model.Usuario;
 import com.example.demo.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.demo.dto.TrocarSenhaDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,6 +58,18 @@ public class UsuarioService {
             throw new RuntimeException("Utilizador não encontrado.");
         }
         usuarioRepository.deleteById(id);
+    }
+
+    public void trocarSenha(Long idUsuario, TrocarSenhaDTO dto) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado."));
+
+        //compara a senha digitada com o hash guardado no banco
+        if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha()))
+            throw new IllegalArgumentException("Acesso negado: A palavra-passe atual está incorreta.");
+
+        usuario.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
+        usuarioRepository.save(usuario);
     }
 
     private UsuarioResponseDTO mapToResponse(Usuario usuario) {

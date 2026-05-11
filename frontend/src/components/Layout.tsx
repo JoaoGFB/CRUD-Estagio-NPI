@@ -1,9 +1,17 @@
-import { useContext, type ReactNode } from 'react';
+import { useContext, useState, type ReactNode } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import api from '../service/api';
+import { isAxiosError } from 'axios';
 
 interface LayoutProps {
   children: ReactNode;
+}
+
+interface TrocaSenhaForm {
+  senhaAtual: string;
+  novaSenha: string;
 }
 
 //ícones usados
@@ -52,12 +60,44 @@ const IconUsersMenu = () => (
   </svg>
 );
 
+const IconLock = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
 export const Layout = ({ children }: LayoutProps) => {
-  const { logout, role, nome, email, curso, campus } = useContext(AuthContext);
+  const { logout, role, nome, email, curso, campus, userId } = useContext(AuthContext);
   const location = useLocation();
+
+  //estados do modal de perfil
+  const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<TrocaSenhaForm>();
 
   const isActive = (path: string) =>
     location.pathname === path || (path === '/' && location.pathname === '/');
+
+  //função para enviar a palavra-passe para a API
+  const onSubmitSenha = async (data: TrocaSenhaForm) => {
+    try {
+      await api.put(`/usuarios/${userId}/senha`, data);
+      alert('Palavra-passe alterada com sucesso!');
+      setModalPerfilAberto(false);
+      reset();
+    } catch (error) {
+      if (isAxiosError(error) && error.response && typeof error.response.data === 'string') {
+        alert(error.response.data);
+      } else {
+        alert('Erro ao alterar a palavra-passe.');
+      }
+    }
+  };
 
   return (
     <div className="app-layout">
@@ -87,6 +127,8 @@ export const Layout = ({ children }: LayoutProps) => {
               <IconTags />
               Tags
             </Link>
+          </>
+        )}
 
         {/*bloqueio de admin, só o gestor da sede vê o botão*/}
         {role === 'GESTOR' && campus === 'SEDE' && (
@@ -94,8 +136,6 @@ export const Layout = ({ children }: LayoutProps) => {
             <IconUsersMenu />
             Equipa
           </Link>
-        )}
-          </>
         )}
 
         {/*disciplinas fica de fora da condição, pois todos têm acesso à página*/}
@@ -119,13 +159,19 @@ export const Layout = ({ children }: LayoutProps) => {
           display: 'flex', justifyContent: 'flex-end', alignItems: 'center', 
           marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.4)' 
         }}>
-          <div style={{ 
-            display: 'flex', alignItems: 'center', gap: '14px', 
-            background: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(16px)',
-            padding: '8px 10px 8px 20px', borderRadius: '999px',
-            border: '1px solid rgba(255,255,255,0.7)',
-            boxShadow: '0 4px 16px rgba(0, 150, 210, 0.1), inset 0 2px 0 rgba(255,255,255,0.8)'
-          }}>
+          <div 
+            onClick={() => setModalPerfilAberto(true)}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '14px', 
+              background: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(16px)',
+              padding: '8px 10px 8px 20px', borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.7)',
+              boxShadow: '0 4px 16px rgba(0, 150, 210, 0.1), inset 0 2px 0 rgba(255,255,255,0.8)',
+              cursor: 'pointer', transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontWeight: '800', color: 'var(--ink-900)', fontSize: '0.95rem', lineHeight: '1.2' }}>
                 {nome || 'Usuário NPI'}
@@ -157,6 +203,58 @@ export const Layout = ({ children }: LayoutProps) => {
         </header>
 
         {children}
+
+        {/*troca de senha*/}
+        {modalPerfilAberto && (
+          <div style={{ 
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            backgroundColor: 'rgba(0,30,50,0.4)', backdropFilter: 'blur(4px)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 
+          }}>
+            <div style={{ 
+              background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(24px)',
+              padding: '2.5rem', borderRadius: '24px', width: '400px', maxWidth: '90%', 
+              boxShadow: '0 20px 40px rgba(0,100,150,0.2), inset 0 1px 0 rgba(255,255,255,0.9)',
+              border: '1px solid rgba(255,255,255,0.5)'
+            }}>
+              <h3 style={{ marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconLock /> Meu Perfil
+              </h3>
+              <p style={{ color: 'var(--ink-500)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                Altere a sua palavra-passe de acesso ao sistema.
+              </p>
+              
+              <form onSubmit={handleSubmit(onSubmitSenha)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label className="form-label">Palavra-Passe Atual *</label>
+                  <input 
+                    type="password" className="form-input" placeholder="••••••••" 
+                    {...register('senhaAtual', { required: 'Informe a palavra-passe atual' })} 
+                  />
+                  {errors.senhaAtual && <span className="form-error" style={{marginTop: '4px'}}><IconAlert /> {errors.senhaAtual.message}</span>}
+                </div>
+
+                <div>
+                  <label className="form-label">Nova Palavra-Passe *</label>
+                  <input 
+                    type="password" className="form-input" placeholder="••••••••" 
+                    {...register('novaSenha', { required: 'Informe a nova palavra-passe', minLength: { value: 6, message: 'Mínimo 6 caracteres' } })} 
+                  />
+                  {errors.novaSenha && <span className="form-error" style={{marginTop: '4px'}}><IconAlert /> {errors.novaSenha.message}</span>}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => { setModalPerfilAberto(false); reset(); }}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-success" disabled={isSubmitting}>
+                    {isSubmitting ? 'A guardar...' : 'Atualizar Palavra-Passe'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

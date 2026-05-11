@@ -40,4 +40,10 @@ public class UsuarioController {
     public ResponseEntity<String> handleErros(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(ex.getMessage());
     }
+
+    @PutMapping("/{id}/senha")
+    public ResponseEntity<String> trocarSenha(@PathVariable Long id, @RequestBody com.example.demo.dto.TrocarSenhaDTO dto) {
+        usuarioService.trocarSenha(id, dto);
+        return ResponseEntity.ok("Palavra-passe alterada com sucesso.");
+    }
 }
