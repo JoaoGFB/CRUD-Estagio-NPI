@@ -145,24 +145,48 @@ export const Disciplinas = () => {
   //lógica do filtro ABAC para as salas
   const getSalasCompativeis = () => {
     if (!disciplinaParaEnsalar) return [];
-    
+
     const exigencias = disciplinaParaEnsalar.tagsExigidas;
     const meuCursoNormalizado = curso?.trim().toLowerCase();
 
     return salas.filter(sala => {
       const cursoSalaNormalizado = sala.cursoVinculado?.trim().toLowerCase();
-      //a sala será liberada se for Interdisciplinar ou se o curso dela for igual ao curso do coordenador
+      // a sala será liberada se for Interdisciplinar ou se o curso dela for igual ao curso do coordenador
       const temPermissaoDeAcesso = sala.interdisciplinar === true || cursoSalaNormalizado === meuCursoNormalizado;
 
-      //se for coordenador e não tiver permissão, esconde a sala
+      // se for coordenador e não tiver permissão, esconde a sala
       if (isCoordenador && !temPermissaoDeAcesso) 
         return false;
       
-      //validação das tags
-      if (exigencias.length === 0) return true;
+      // validação das tags
+      if (exigencias.length > 0) {
+        const tagsDaSala = sala.tags || []; 
+        const atendeRequisitos = exigencias.every(exigencia => tagsDaSala.includes(exigencia));
+        if (!atendeRequisitos) return false;
+      }
 
-      const tagsDaSala = sala.tags || []; 
-      return exigencias.every(exigencia => tagsDaSala.includes(exigencia));
+      //disponibilidade de data e horário
+      //faz o filtro só se o usuário já tiver preenchido os 3 campos de tempo
+      if (formReserva.data && formReserva.horarioInicio && formReserva.horarioFim) {
+        const temConflito = reservas.some(r => {
+          //verifica se é a mesma sala, mesmo dia e se a reserva está aprovada
+          const mesmaSala = r.nomeSala === sala.nome;
+          const mesmoDia = r.data === formReserva.data;
+          const reservaAtiva = r.status === 'APROVADA';
+
+          if (!mesmaSala || !mesmoDia || !reservaAtiva) return false;
+
+          //sobreposição: (Inicio A < Fim B) e (Fim A > Inicio B)
+          const sobrepoe = (formReserva.horarioInicio < r.horarioFim) && (formReserva.horarioFim > r.horarioInicio);
+
+          return sobrepoe;
+        });
+
+        //se encontrou conflito de horário, remove a sala da lista de opções
+        if (temConflito) return false;
+      }
+
+      return true;
     });
   };
 
@@ -377,25 +401,7 @@ export const Disciplinas = () => {
             <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Selecione uma das salas compatíveis com os requisitos.</p>
             
             <form onSubmit={solicitarReserva} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label className="form-label">Sala Compatível *</label>
-                {salasDisponiveis.length === 0 ? (
-                  <div style={{ color: '#dc3545', fontSize: '0.9rem', padding: '0.5rem', backgroundColor: '#f8d7da', borderRadius: '4px' }}>
-                    Nenhuma sala cadastrada atende aos requisitos desta disciplina.
-                  </div>
-                ) : (
-                  <select 
-                    className="form-input" 
-                    required 
-                    value={formReserva.salaId} 
-                    onChange={e => setFormReserva({...formReserva, salaId: e.target.value})}
-                  >
-                    <option value="">Selecione uma sala...</option>
-                    {salasDisponiveis.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
-                  </select>
-                )}
-              </div>
-
+              
               <div>
                 <label className="form-label">Data *</label>
                 <input type="date" className="form-input" required value={formReserva.data} onChange={e => setFormReserva({...formReserva, data: e.target.value})} />
@@ -412,6 +418,26 @@ export const Disciplinas = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="form-label">Sala Compatível e Disponível *</label>
+                {salasDisponiveis.length === 0 ? (
+                  <div style={{ color: '#dc3545', fontSize: '0.9rem', padding: '0.5rem', backgroundColor: '#f8d7da', borderRadius: '4px' }}>
+                    Nenhuma sala livre atende aos requisitos neste horário.
+                  </div>
+                ) : (
+                  <select 
+                    className="form-input" 
+                    required 
+                    value={formReserva.salaId} 
+                    onChange={e => setFormReserva({...formReserva, salaId: e.target.value})}
+                  >
+                    <option value="">Selecione uma sala...</option>
+                    {salasDisponiveis.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                  </select>
+                )}
+              </div>
+
+              {/* BOTÕES */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setModalReservaAberto(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" disabled={salasDisponiveis.length === 0}>Solicitar Reserva</button>

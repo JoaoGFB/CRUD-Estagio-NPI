@@ -89,7 +89,7 @@ export const Layout = ({ children }: LayoutProps) => {
         )}
 
         {role === 'GESTOR' && campus === 'SEDE' && (
-          <Link to="/usuarios" className={`sidebar-link ${isActive('/usuarios') ? 'active' : ''}`}><IconUsersMenu /> Equipa</Link>
+          <Link to="/usuarios" className={`sidebar-link ${isActive('/usuarios') ? 'active' : ''}`}><IconUsersMenu />Time</Link>
         )}
 
         <Link to="/disciplinas" className={`sidebar-link ${isActive('/disciplinas') ? 'active' : ''}`}><IconBook /> Disciplinas</Link>
