@@ -13,14 +13,25 @@ CREATE TABLE disciplina_tag (
     CONSTRAINT fk_dt_tag FOREIGN KEY (tag_id) REFERENCES tag (id) ON DELETE CASCADE
 );
 
+CREATE TABLE periodo_letivo (
+    id BIGSERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    tipo VARCHAR(50) NOT NULL,
+    data_inicio DATE NOT NULL,
+    data_fim DATE NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 CREATE TABLE reserva (
     id BIGSERIAL PRIMARY KEY,
     sala_id BIGINT NOT NULL,
     disciplina_id BIGINT NOT NULL,
-    data DATE NOT NULL,
+    periodo_letivo_id BIGINT NOT NULL,
+    dia_da_semana VARCHAR(20) NOT NULL,
     horario_inicio TIME NOT NULL,
     horario_fim TIME NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDENTE',
     CONSTRAINT fk_reserva_sala FOREIGN KEY (sala_id) REFERENCES sala (id),
-    CONSTRAINT fk_reserva_disciplina FOREIGN KEY (disciplina_id) REFERENCES disciplina (id)
+    CONSTRAINT fk_reserva_disciplina FOREIGN KEY (disciplina_id) REFERENCES disciplina (id),
+    CONSTRAINT fk_reserva_periodo FOREIGN KEY (periodo_letivo_id) REFERENCES periodo_letivo (id)
 );
