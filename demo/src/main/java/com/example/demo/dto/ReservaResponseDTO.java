@@ -1,6 +1,8 @@
 package com.example.demo.dto;
 
 import com.example.demo.model.StatusReserva;
+
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -9,7 +11,8 @@ public class ReservaResponseDTO {
     private String nomeSala;
     private String nomeDisciplina;
     private String nomeCoordenador;
-    private LocalDate data;
+    private String nomePeriodo;
+    private java.time.DayOfWeek diaDaSemana;
     private LocalTime horarioInicio;
     private LocalTime horarioFim;
     private StatusReserva status;
@@ -23,12 +26,22 @@ public class ReservaResponseDTO {
     public void setNomeDisciplina(String nomeDisciplina) { this.nomeDisciplina = nomeDisciplina; }
     public String getNomeCoordenador() { return nomeCoordenador; }
     public void setNomeCoordenador(String nomeCoordenador) { this.nomeCoordenador = nomeCoordenador; }
-    public LocalDate getData() { return data; }
-    public void setData(LocalDate data) { this.data = data; }
     public LocalTime getHorarioInicio() { return horarioInicio; }
     public void setHorarioInicio(LocalTime horarioInicio) { this.horarioInicio = horarioInicio; }
     public LocalTime getHorarioFim() { return horarioFim; }
     public void setHorarioFim(LocalTime horarioFim) { this.horarioFim = horarioFim; }
     public StatusReserva getStatus() { return status; }
     public void setStatus(StatusReserva status) { this.status = status; }
+    public String getNomePeriodo() {
+        return nomePeriodo;
+    }
+    public void setNomePeriodo(String nomePeriodo) {
+        this.nomePeriodo = nomePeriodo;
+    }
+    public DayOfWeek getDiaDaSemana() {
+        return diaDaSemana;
+    }
+    public void setDiaDaSemana(DayOfWeek diaDaSemana) {
+        this.diaDaSemana = diaDaSemana;
+    }
 }

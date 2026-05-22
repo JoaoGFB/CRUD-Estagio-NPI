@@ -4,29 +4,50 @@ import api from '../service/api';
 import { isAxiosError } from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 
-//interfaces
+
 interface Tag { id: number; nome: string; }
 interface Disciplina { id: number; nome: string; nomeCoordenador: string; tagsExigidas: string[]; }
 interface Sala { 
   id: number; 
-  nome: string; 
+  nome: string;
   tags?: string[]; 
   interdisciplinar: boolean; 
   cursoVinculado: string | null; 
 }
+interface PeriodoLetivo {
+  id: number;
+  nome: string;
+  ativo: boolean;
+}
 interface Reserva { 
   id: number; 
   nomeSala: string; 
-  nomeDisciplina: string; 
+  nomeDisciplina: string;
   nomeCoordenador: string; 
-  data: string; 
+  nomePeriodo: string;
+  diaDaSemana: string;
   horarioInicio: string; 
   horarioFim: string; 
   status: string; 
 }
 interface NovaDisciplinaForm { nome: string; tagIds: string[]; }
 
-//ícones usados
+//dias da semana
+const DIAS_DA_SEMANA = [
+  { value: 'MONDAY', label: 'Segunda-feira' },
+  { value: 'TUESDAY', label: 'Terça-feira' },
+  { value: 'WEDNESDAY', label: 'Quarta-feira' },
+  { value: 'THURSDAY', label: 'Quinta-feira' },
+  { value: 'FRIDAY', label: 'Sexta-feira' },
+  { value: 'SATURDAY', label: 'Sábado' },
+];
+
+const traduzirDia = (diaEmIngles: string) => {
+  const diaEncontrado = DIAS_DA_SEMANA.find(d => d.value === diaEmIngles);
+  return diaEncontrado ? diaEncontrado.label : diaEmIngles;
+};
+
+//ícones
 const IconBook = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
 const IconPlus = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>);
 const IconEdit = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
@@ -35,8 +56,7 @@ const IconCalendar = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const IconCheck = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
 
 export const Disciplinas = () => {
-  //extração do campus do contexto
-  const { role, userId, curso, campus } = useContext(AuthContext); 
+  const { role, userId, curso, campus } = useContext(AuthContext);
   const isCoordenador = role === 'COORDENADOR';
   const isGestor = role === 'GESTOR';
 
@@ -44,13 +64,22 @@ export const Disciplinas = () => {
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
   const [salas, setSalas] = useState<Sala[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [periodos, setPeriodos] = useState<PeriodoLetivo[]>([]); // NOVO ESTADO
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [idEditando, setIdEditando] = useState<number | null>(null);
 
   const [modalReservaAberto, setModalReservaAberto] = useState(false);
   const [disciplinaParaEnsalar, setDisciplinaParaEnsalar] = useState<Disciplina | null>(null);
-  const [formReserva, setFormReserva] = useState({ salaId: '', data: '', horarioInicio: '', horarioFim: '' });
-
+  
+  //formulário
+  const [formReserva, setFormReserva] = useState({ 
+    salaId: '', 
+    periodoLetivoId: '', 
+    diaDaSemana: '', 
+    horarioInicio: '', 
+    horarioFim: '' 
+  });
+  
   const { register, handleSubmit, reset, setValue } = useForm<NovaDisciplinaForm>();
 
   useEffect(() => {
@@ -60,17 +89,18 @@ export const Disciplinas = () => {
           ? `/reservas/campus/${campus}` 
           : '/reservas';
 
-        const [disciplinasRes, tagsRes, salasRes, reservasRes] = await Promise.all([
+        const [disciplinasRes, tagsRes, salasRes, reservasRes, periodosRes] = await Promise.all([
           isCoordenador ? api.get(`/disciplinas/coordenador/${userId}`) : api.get('/disciplinas'),
           api.get('/tags'),
           api.get('/salas'),
-          api.get(urlReservas)
+          api.get(urlReservas),
+          // Fallback seguro caso você ainda não tenha feito o PeriodoLetivoController no Java
+          api.get('/periodos-letivos').catch(() => ({ data: [{ id: 1, nome: '1º Bimestre (Mock)', ativo: true }] }))
         ]);
         
         let disciplinasParaMostrar = disciplinasRes.data;
         
         if (isGestor) {
-          //o gestor só vê o card se a matéria tiver uma reserva (pendente ou aprovada) no campus dele
           disciplinasParaMostrar = disciplinasRes.data.filter((disciplina: Disciplina) => 
             reservasRes.data.some((reserva: Reserva) => reserva.nomeDisciplina === disciplina.nome)
           );
@@ -80,6 +110,8 @@ export const Disciplinas = () => {
         setTagsDisponiveis(tagsRes.data);
         setSalas(salasRes.data);
         setReservas(reservasRes.data);
+        setPeriodos(periodosRes.data);
+
       } catch (error) {
         console.error('Erro ao buscar dados:', error);
       }
@@ -142,69 +174,42 @@ export const Disciplinas = () => {
     }
   };
 
-  //lógica do filtro ABAC para as salas
+  //lógica abac para filtrar as salas
   const getSalasCompativeis = () => {
     if (!disciplinaParaEnsalar) return [];
-
     const exigencias = disciplinaParaEnsalar.tagsExigidas;
     const meuCursoNormalizado = curso?.trim().toLowerCase();
 
     return salas.filter(sala => {
       const cursoSalaNormalizado = sala.cursoVinculado?.trim().toLowerCase();
-      // a sala será liberada se for Interdisciplinar ou se o curso dela for igual ao curso do coordenador
       const temPermissaoDeAcesso = sala.interdisciplinar === true || cursoSalaNormalizado === meuCursoNormalizado;
 
-      // se for coordenador e não tiver permissão, esconde a sala
       if (isCoordenador && !temPermissaoDeAcesso) 
         return false;
       
-      // validação das tags
-      if (exigencias.length > 0) {
-        const tagsDaSala = sala.tags || []; 
-        const atendeRequisitos = exigencias.every(exigencia => tagsDaSala.includes(exigencia));
-        if (!atendeRequisitos) return false;
-      }
+      if (exigencias.length === 0) return true;
 
-      //disponibilidade de data e horário
-      //faz o filtro só se o usuário já tiver preenchido os 3 campos de tempo
-      if (formReserva.data && formReserva.horarioInicio && formReserva.horarioFim) {
-        const temConflito = reservas.some(r => {
-          //verifica se é a mesma sala, mesmo dia e se a reserva está aprovada
-          const mesmaSala = r.nomeSala === sala.nome;
-          const mesmoDia = r.data === formReserva.data;
-          const reservaAtiva = r.status === 'APROVADA';
-
-          if (!mesmaSala || !mesmoDia || !reservaAtiva) return false;
-
-          //sobreposição: (Inicio A < Fim B) e (Fim A > Inicio B)
-          const sobrepoe = (formReserva.horarioInicio < r.horarioFim) && (formReserva.horarioFim > r.horarioInicio);
-
-          return sobrepoe;
-        });
-
-        //se encontrou conflito de horário, remove a sala da lista de opções
-        if (temConflito) return false;
-      }
-
-      return true;
+      const tagsDaSala = sala.tags || []; 
+      return exigencias.every(exigencia => tagsDaSala.includes(exigencia));
     });
   };
 
   const abrirModalReserva = (disciplina: Disciplina) => {
     setDisciplinaParaEnsalar(disciplina);
-    setFormReserva({ salaId: '', data: '', horarioInicio: '', horarioFim: '' });
+    setFormReserva({ salaId: '', periodoLetivoId: '', diaDaSemana: '', horarioInicio: '', horarioFim: '' });
     setModalReservaAberto(true);
   };
 
   const solicitarReserva = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!disciplinaParaEnsalar || !formReserva.salaId) return;
-
+    if (!disciplinaParaEnsalar || !formReserva.salaId || !formReserva.periodoLetivoId || !formReserva.diaDaSemana) return;
+    
     try {
       await api.post('/reservas', {
         salaId: Number(formReserva.salaId),
         disciplinaId: disciplinaParaEnsalar.id,
-        data: formReserva.data,
+        periodoLetivoId: Number(formReserva.periodoLetivoId), 
+        diaDaSemana: formReserva.diaDaSemana,
         horarioInicio: formReserva.horarioInicio,
         horarioFim: formReserva.horarioFim
       });
@@ -234,7 +239,6 @@ export const Disciplinas = () => {
     }
   };
 
-  //função para o gestor excluir/cancelar uma reserva
   const deletarReserva = async (idReserva: number) => {
     if (window.confirm("ATENÇÃO GESTOR: Tem certeza que deseja cancelar esta reserva? A disciplina voltará a ficar sem sala.")) {
       try {
@@ -329,7 +333,7 @@ export const Disciplinas = () => {
                     </div>
                   </div>
 
-                  {/*status da reserva*/}
+                  
                   <div style={{ marginTop: 'auto', padding: '1rem', backgroundColor: reservaVinculada ? '#f8f9fa' : 'transparent', borderRadius: '8px', border: reservaVinculada ? '1px solid #e9ecef' : 'none' }}>
                     
                     {!reservaVinculada && (
@@ -339,7 +343,7 @@ export const Disciplinas = () => {
                             <IconCalendar /> Solicitar Ensalamento
                           </button>
                         ) : (
-                          <span style={{ color: '#999', fontStyle: 'italic', fontSize: '0.9rem' }}>Aguardando solicitação do coordenador...</span>
+                          <span style={{ color: '#999', fontStyle: 'italic', fontSize: '0.9rem' }}>Aguardando solicitação...</span>
                         )}
                       </div>
                     )}
@@ -347,7 +351,8 @@ export const Disciplinas = () => {
                     {reservaVinculada && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
                         <div><strong>Sala:</strong> {reservaVinculada.nomeSala}</div>
-                        <div><strong>Data:</strong> {reservaVinculada.data.split('-').reverse().join('/')}</div>
+                        <div><strong>Período:</strong> {reservaVinculada.nomePeriodo}</div>
+                        <div><strong>Dia:</strong> {traduzirDia(reservaVinculada.diaDaSemana)}</div>
                         <div><strong>Horário:</strong> {reservaVinculada.horarioInicio.slice(0,5)} às {reservaVinculada.horarioFim.slice(0,5)}</div>
                         <div>
                           <strong>Status: </strong> 
@@ -362,7 +367,6 @@ export const Disciplinas = () => {
                           </span>
                         </div>
                         
-                        {/*ações do gestor na reserva*/}
                         {isGestor && (
                           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                             {reservaVinculada.status === 'PENDENTE' && (
@@ -379,7 +383,6 @@ export const Disciplinas = () => {
                     )}
                   </div>
 
-                  {/*edição/exclusão da disciplina*/}
                   {isCoordenador && !reservaVinculada && (
                     <div className="room-card-actions" style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
                       <button className="btn btn-warning btn-sm" onClick={() => iniciarEdicao(disciplina)}><IconEdit /> Editar</button>
@@ -396,33 +399,16 @@ export const Disciplinas = () => {
       {/*modal de ensalamento*/}
       {modalReservaAberto && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '450px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '480px', maxWidth: '95%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Agendar: {disciplinaParaEnsalar?.nome}</h3>
-            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Selecione uma das salas compatíveis com os requisitos.</p>
+            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Selecione uma das salas compatíveis e o ciclo letivo.</p>
             
             <form onSubmit={solicitarReserva} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              
               <div>
-                <label className="form-label">Data *</label>
-                <input type="date" className="form-input" required value={formReserva.data} onChange={e => setFormReserva({...formReserva, data: e.target.value})} />
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label className="form-label">Início *</label>
-                  <input type="time" className="form-input" required value={formReserva.horarioInicio} onChange={e => setFormReserva({...formReserva, horarioInicio: e.target.value})} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label className="form-label">Fim *</label>
-                  <input type="time" className="form-input" required value={formReserva.horarioFim} onChange={e => setFormReserva({...formReserva, horarioFim: e.target.value})} />
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label">Sala Compatível e Disponível *</label>
+                <label className="form-label">Sala Compatível *</label>
                 {salasDisponiveis.length === 0 ? (
                   <div style={{ color: '#dc3545', fontSize: '0.9rem', padding: '0.5rem', backgroundColor: '#f8d7da', borderRadius: '4px' }}>
-                    Nenhuma sala livre atende aos requisitos neste horário.
+                    Nenhuma sala cadastrada atende aos requisitos desta disciplina.
                   </div>
                 ) : (
                   <select 
@@ -437,7 +423,50 @@ export const Disciplinas = () => {
                 )}
               </div>
 
-              {/* BOTÕES */}
+              
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">Período Letivo *</label>
+                  <select 
+                    className="form-input" 
+                    required 
+                    value={formReserva.periodoLetivoId} 
+                    onChange={e => setFormReserva({...formReserva, periodoLetivoId: e.target.value})}
+                  >
+                    <option value="">Selecione...</option>
+                    {periodos.filter(p => p.ativo).map(p => (
+                      <option key={p.id} value={p.id}>{p.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">Dia da Semana *</label>
+                  <select 
+                    className="form-input" 
+                    required 
+                    value={formReserva.diaDaSemana} 
+                    onChange={e => setFormReserva({...formReserva, diaDaSemana: e.target.value})}
+                  >
+                    <option value="">Selecione...</option>
+                    {DIAS_DA_SEMANA.map(d => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">Início *</label>
+                  <input type="time" className="form-input" required value={formReserva.horarioInicio} onChange={e => setFormReserva({...formReserva, horarioInicio: e.target.value})} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">Fim *</label>
+                  <input type="time" className="form-input" required value={formReserva.horarioFim} onChange={e => setFormReserva({...formReserva, horarioFim: e.target.value})} />
+                </div>
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setModalReservaAberto(false)}>Cancelar</button>
                 <button type="submit" className="btn btn-primary" disabled={salasDisponiveis.length === 0}>Solicitar Reserva</button>

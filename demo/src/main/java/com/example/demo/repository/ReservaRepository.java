@@ -5,25 +5,25 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.time.DayOfWeek;
 
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
-    //a query impede conflitos de horário na mesma sala
+    //checa conflito na mesma sala, mesmo bimestre e mesmo dia da semana
     @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.sala.id = :salaId " +
-            "AND r.data = :data " +
+            "AND r.periodoLetivo.id = :periodoId " +
+            "AND r.diaDaSemana = :dia " +
             "AND r.status = 'APROVADA' " +
             "AND (r.horarioInicio < :horarioFim AND r.horarioFim > :horarioInicio)")
-    boolean existeConflitoDeHorario(@Param("salaId") Long salaId,
-                                    @Param("data") LocalDate data,
-                                    @Param("horarioInicio") LocalTime horarioInicio,
-                                    @Param("horarioFim") LocalTime horarioFim);
+    boolean existeConflitoDeHorario(
+            @Param("salaId") Long salaId,
+            @Param("periodoId") Long periodoId,
+            @Param("dia") DayOfWeek dia,
+            @Param("horarioInicio") LocalTime horarioInicio,
+            @Param("horarioFim") LocalTime horarioFim);
 
-    //para o Gestor ver o calendário de uma sala específica
-    List<Reserva> findBySalaIdAndData(Long salaId, LocalDate data);
     List<Reserva> findBySalaCampus(String campus);
 }

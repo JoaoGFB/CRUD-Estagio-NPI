@@ -1,6 +1,8 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
+
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -19,8 +21,13 @@ public class Reserva {
     @JoinColumn(name = "disciplina_id", nullable = false)
     private Disciplina disciplina;
 
-    @Column(nullable = false)
-    private LocalDate data;
+    @ManyToOne
+    @JoinColumn(name = "periodo_letivo_id", nullable = false)
+    private PeriodoLetivo periodoLetivo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "dia_da_semana", nullable = false)
+    private DayOfWeek diaDaSemana;
 
     @Column(name = "horario_inicio", nullable = false)
     private LocalTime horarioInicio;
@@ -38,12 +45,22 @@ public class Reserva {
     public void setSala(Sala sala) { this.sala = sala; }
     public Disciplina getDisciplina() { return disciplina; }
     public void setDisciplina(Disciplina disciplina) { this.disciplina = disciplina; }
-    public LocalDate getData() { return data; }
-    public void setData(LocalDate data) { this.data = data; }
     public LocalTime getHorarioInicio() { return horarioInicio; }
     public void setHorarioInicio(LocalTime horarioInicio) { this.horarioInicio = horarioInicio; }
     public LocalTime getHorarioFim() { return horarioFim; }
     public void setHorarioFim(LocalTime horarioFim) { this.horarioFim = horarioFim; }
     public StatusReserva getStatus() { return status; }
     public void setStatus(StatusReserva status) { this.status = status; }
+    public PeriodoLetivo getPeriodoLetivo() {
+        return periodoLetivo;
+    }
+    public void setPeriodoLetivo(PeriodoLetivo periodoLetivo) {
+        this.periodoLetivo = periodoLetivo;
+    }
+    public DayOfWeek getDiaDaSemana() {
+        return diaDaSemana;
+    }
+    public void setDiaDaSemana(DayOfWeek diaDaSemana) {
+        this.diaDaSemana = diaDaSemana;
+    }
 }

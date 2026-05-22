@@ -9,6 +9,7 @@ import { Tags } from './pages/Tags';
 import { Disciplinas } from './pages/Disciplinas';
 import { Usuarios } from './pages/Usuarios';
 import { PrivateRoute } from './components/PrivateRoute';//import da guarda de rotas
+import { Periodos } from './pages/Periodos';
 
 const RoutesConfig = () => {
   //extração da role do contexto para fazer o redirecionamento no login
@@ -69,11 +70,18 @@ const RoutesConfig = () => {
           <PrivateRoute rolesRequeridos={['GESTOR']} campusRequerido="SEDE">//só o gestor da sede tem acesso
             <Layout><Usuarios /></Layout>
           </PrivateRoute>
-        } 
-      />
+        }/>
+
+      <Route 
+        path="/periodos" 
+        element={
+          <PrivateRoute rolesRequeridos={['GESTOR']} campusRequerido="SEDE">
+            <Layout><Periodos /></Layout>
+          </PrivateRoute>
+        }/>
       
       
-      {/* ROTAS COMPARTILHADAS (GESTOR E COORDENADOR) */}
+      {/*rotas compartilhadas entre gestor e coordenador*/}
       <Route
         path="/disciplinas"
         element={
