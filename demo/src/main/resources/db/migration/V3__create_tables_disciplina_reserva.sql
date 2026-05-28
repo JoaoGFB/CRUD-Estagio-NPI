@@ -2,6 +2,7 @@ CREATE TABLE disciplina (
     id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     coordenador_id BIGINT NOT NULL,
+    numero_alunos INT NOT NULL DEFAULT 0,
     CONSTRAINT fk_disciplina_coordenador FOREIGN KEY (coordenador_id) REFERENCES usuario (id)
 );
 

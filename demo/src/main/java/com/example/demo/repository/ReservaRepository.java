@@ -5,18 +5,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
-import java.time.DayOfWeek;
 
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
-    //checa conflito na mesma sala, mesmo bimestre e mesmo dia da semana
+    //bloqueia conflitos se a reserva estiver APROVADA ou PENDENTE
     @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.sala.id = :salaId " +
             "AND r.periodoLetivo.id = :periodoId " +
             "AND r.diaDaSemana = :dia " +
-            "AND r.status = 'APROVADA' " +
+            "AND r.status IN ('APROVADA', 'PENDENTE') " +
             "AND (r.horarioInicio < :horarioFim AND r.horarioFim > :horarioInicio)")
     boolean existeConflitoDeHorario(
             @Param("salaId") Long salaId,

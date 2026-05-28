@@ -36,37 +36,36 @@ public class ReservaService {
         Disciplina disciplina = disciplinaRepository.findById(dto.getDisciplinaId())
                 .orElseThrow(() -> new RuntimeException("Disciplina não encontrada"));
 
-        //busca o período letivo no banco
+        //valida a capacidade com uma tolerância de até 15% de superlotação
+        double capacidadeMinimaExigida = disciplina.getNumeroAlunos() * 0.85;
+        if (sala.getCapacidade() < capacidadeMinimaExigida) {
+            throw new IllegalArgumentException("Ação bloqueada: A capacidade da sala ("
+                    + sala.getCapacidade() + " lugares) é muito inferior ao número de alunos da turma ("
+                    + disciplina.getNumeroAlunos() + " alunos).");
+        }
+
         PeriodoLetivo periodo = periodoLetivoRepository.findById(dto.getPeriodoLetivoId())
                 .orElseThrow(() -> new RuntimeException("Período Letivo não encontrado"));
 
-        //valida as tags pegando o id para comparação
         List<Long> tagsSalaIds = sala.getTags().stream().map(Tag::getId).collect(Collectors.toList());
         List<Long> tagsDisciplinaIds = disciplina.getTagsExigidas().stream().map(Tag::getId).collect(Collectors.toList());
 
-        if (!tagsSalaIds.containsAll(tagsDisciplinaIds)) {
-            throw new IllegalArgumentException("Ação bloqueada: A sala escolhida não possui todos os equipamentos/características exigidos pela disciplina.");
-        }
+        if (!tagsSalaIds.containsAll(tagsDisciplinaIds))
+            throw new IllegalArgumentException("Ação bloqueada: A sala escolhida não possui todos os equipamentos exigidos.");
 
-        //validação de conflito, considera período e dia da semana
         boolean conflito = reservaRepository.existeConflitoDeHorario(
                 dto.getSalaId(), dto.getPeriodoLetivoId(), dto.getDiaDaSemana(), dto.getHorarioInicio(), dto.getHorarioFim());
 
-        if (conflito) {
-            throw new IllegalArgumentException("Ação bloqueada: Já existe uma reserva aprovada para esta sala neste horário e dia da semana.");
-        }
+        if (conflito)
+            throw new IllegalArgumentException("Ação bloqueada: Já existe uma reserva (Aprovada ou Pendente) para esta sala neste horário.");
 
         Reserva reserva = new Reserva();
         reserva.setSala(sala);
         reserva.setDisciplina(disciplina);
-
         reserva.setPeriodoLetivo(periodo);
         reserva.setDiaDaSemana(dto.getDiaDaSemana());
-
         reserva.setHorarioInicio(dto.getHorarioInicio());
         reserva.setHorarioFim(dto.getHorarioFim());
-
-        //o padrão da reserva criada é pendente
         reserva.setStatus(StatusReserva.PENDENTE);
 
         Reserva salva = reservaRepository.save(reserva);

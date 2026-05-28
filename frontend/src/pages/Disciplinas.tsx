@@ -6,13 +6,14 @@ import { AuthContext } from '../contexts/AuthContext';
 
 
 interface Tag { id: number; nome: string; }
-interface Disciplina { id: number; nome: string; nomeCoordenador: string; tagsExigidas: string[]; }
+interface Disciplina { id: number; nome: string; nomeCoordenador: string; tagsExigidas: string[]; numeroAlunos: number; }
 interface Sala { 
   id: number; 
   nome: string;
   tags?: string[]; 
   interdisciplinar: boolean; 
-  cursoVinculado: string | null; 
+  cursoVinculado: string | null;
+  capacidade: number;
 }
 interface PeriodoLetivo {
   id: number;
@@ -30,9 +31,8 @@ interface Reserva {
   horarioFim: string; 
   status: string; 
 }
-interface NovaDisciplinaForm { nome: string; tagIds: string[]; }
+interface NovaDisciplinaForm { nome: string; tagIds: string[]; numeroAlunos: number; }
 
-//dias da semana
 const DIAS_DA_SEMANA = [
   { value: 'MONDAY', label: 'Segunda-feira' },
   { value: 'TUESDAY', label: 'Terça-feira' },
@@ -47,13 +47,13 @@ const traduzirDia = (diaEmIngles: string) => {
   return diaEncontrado ? diaEncontrado.label : diaEmIngles;
 };
 
-//ícones
 const IconBook = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
 const IconPlus = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>);
 const IconEdit = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
 const IconTrash = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>);
 const IconCalendar = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>);
 const IconCheck = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
+const IconUsers = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
 
 export const Disciplinas = () => {
   const { role, userId, curso, campus } = useContext(AuthContext);
@@ -64,14 +64,13 @@ export const Disciplinas = () => {
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
   const [salas, setSalas] = useState<Sala[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
-  const [periodos, setPeriodos] = useState<PeriodoLetivo[]>([]); // NOVO ESTADO
+  const [periodos, setPeriodos] = useState<PeriodoLetivo[]>([]); 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [idEditando, setIdEditando] = useState<number | null>(null);
 
   const [modalReservaAberto, setModalReservaAberto] = useState(false);
   const [disciplinaParaEnsalar, setDisciplinaParaEnsalar] = useState<Disciplina | null>(null);
   
-  //formulário
   const [formReserva, setFormReserva] = useState({ 
     salaId: '', 
     periodoLetivoId: '', 
@@ -94,7 +93,6 @@ export const Disciplinas = () => {
           api.get('/tags'),
           api.get('/salas'),
           api.get(urlReservas),
-          // Fallback seguro caso você ainda não tenha feito o PeriodoLetivoController no Java
           api.get('/periodos-letivos').catch(() => ({ data: [{ id: 1, nome: '1º Bimestre (Mock)', ativo: true }] }))
         ]);
         
@@ -121,15 +119,15 @@ export const Disciplinas = () => {
 
   const recarregarLista = () => setRefreshTrigger((prev) => prev + 1);
 
-  //funções da disciplina
   const cancelarEdicao = () => {
     setIdEditando(null);
-    reset({ nome: '', tagIds: [] });
+    reset({ nome: '', numeroAlunos: 0, tagIds: [] });
   };
 
   const iniciarEdicao = (disciplina: Disciplina) => {
     setIdEditando(disciplina.id);
     setValue('nome', disciplina.nome);
+    setValue('numeroAlunos', disciplina.numeroAlunos);
     const idsDasTags = disciplina.tagsExigidas.map(nomeTag => String(tagsDisponiveis.find(t => t.nome === nomeTag)?.id)).filter(Boolean);
     setValue('tagIds', idsDasTags);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -139,7 +137,8 @@ export const Disciplinas = () => {
     try {
       const payload = {
         nome: data.nome,
-        coordenadorId: userId || 0, 
+        coordenadorId: userId || 0,
+        numeroAlunos: Number(data.numeroAlunos),
         tagIds: data.tagIds ? data.tagIds.map(Number) : []
       };
 
@@ -174,24 +173,31 @@ export const Disciplinas = () => {
     }
   };
 
-  //lógica abac para filtrar as salas
+  //lógica do abac
   const getSalasCompativeis = () => {
     if (!disciplinaParaEnsalar) return [];
     const exigencias = disciplinaParaEnsalar.tagsExigidas;
     const meuCursoNormalizado = curso?.trim().toLowerCase();
+    const qtdAlunos = disciplinaParaEnsalar.numeroAlunos;
 
-    return salas.filter(sala => {
+    const salasFiltradas = salas.filter(sala => {
       const cursoSalaNormalizado = sala.cursoVinculado?.trim().toLowerCase();
       const temPermissaoDeAcesso = sala.interdisciplinar === true || cursoSalaNormalizado === meuCursoNormalizado;
-
-      if (isCoordenador && !temPermissaoDeAcesso) 
-        return false;
+      if (isCoordenador && !temPermissaoDeAcesso) return false;
       
-      if (exigencias.length === 0) return true;
+      //ajustes para sugerir salas que sejam até 15% menores que a turma, uma leve superlotação
+      if (sala.capacidade < (qtdAlunos * 0.85)) return false;
 
-      const tagsDaSala = sala.tags || []; 
-      return exigencias.every(exigencia => tagsDaSala.includes(exigencia));
+      if (exigencias.length > 0) {
+        const tagsDaSala = sala.tags || []; 
+        if (!exigencias.every(exigencia => tagsDaSala.includes(exigencia))) return false;
+      }
+      
+      return true;
     });
+
+    //retorna uma ordenação das salas que mais se adequam a disciplina, baseado na capacidade
+    return salasFiltradas.sort((a, b) => Math.abs(a.capacidade - qtdAlunos) - Math.abs(b.capacidade - qtdAlunos));
   };
 
   const abrirModalReserva = (disciplina: Disciplina) => {
@@ -274,10 +280,18 @@ export const Disciplinas = () => {
             <IconPlus /> {idEditando ? 'Editar Disciplina' : 'Nova Disciplina'}
           </div>
           <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label className="form-label">Nome da Matéria *</label>
-              <input type="text" className="form-input" placeholder="Ex: Engenharia de Software II" {...register('nome', { required: true })} />
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ flex: 2 }}>
+                <label className="form-label">Nome da Matéria *</label>
+                <input type="text" className="form-input" placeholder="Ex: Engenharia de Software II" {...register('nome', { required: true })} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="form-label">Nº de Alunos *</label>
+                <input type="number" className="form-input" placeholder="Ex: 40" min="1" {...register('numeroAlunos', { required: true, min: 1 })} />
+              </div>
             </div>
+
             <div>
               <label className="form-label" style={{ marginBottom: '0.5rem' }}>Equipamentos / Características Exigidas</label>
               <div className="tags-grid" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -319,9 +333,16 @@ export const Disciplinas = () => {
 
               return (
                 <div key={disciplina.id} className="room-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                  
                   <div className="room-card-header">
                     <h3 className="room-card-name">{disciplina.nome}</h3>
-                    <div className="room-card-meta">Coord: {disciplina.nomeCoordenador}</div>
+                    <div className="room-card-meta" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span>Coord: {disciplina.nomeCoordenador}</span>
+                      <span className="dot">·</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <IconUsers /> {disciplina.numeroAlunos} alunos
+                      </span>
+                    </div>
                   </div>
                   
                   <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
@@ -401,14 +422,17 @@ export const Disciplinas = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', width: '480px', maxWidth: '95%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Agendar: {disciplinaParaEnsalar?.nome}</h3>
-            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Selecione uma das salas compatíveis e o ciclo letivo.</p>
+            
+            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              Turma de <strong>{disciplinaParaEnsalar?.numeroAlunos} alunos</strong>. Exibindo salas ordenadas pelo Melhor Encaixe.
+            </p>
             
             <form onSubmit={solicitarReserva} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label className="form-label">Sala Compatível *</label>
                 {salasDisponiveis.length === 0 ? (
                   <div style={{ color: '#dc3545', fontSize: '0.9rem', padding: '0.5rem', backgroundColor: '#f8d7da', borderRadius: '4px' }}>
-                    Nenhuma sala cadastrada atende aos requisitos desta disciplina.
+                    Nenhuma sala livre atende ao tamanho da turma e aos requisitos.
                   </div>
                 ) : (
                   <select 
@@ -418,12 +442,17 @@ export const Disciplinas = () => {
                     onChange={e => setFormReserva({...formReserva, salaId: e.target.value})}
                   >
                     <option value="">Selecione uma sala...</option>
-                    {salasDisponiveis.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                    
+                    {salasDisponiveis.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.nome} ({s.capacidade} lugares)
+                      </option>
+                    ))}
+
                   </select>
                 )}
               </div>
 
-              
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label className="form-label">Período Letivo *</label>

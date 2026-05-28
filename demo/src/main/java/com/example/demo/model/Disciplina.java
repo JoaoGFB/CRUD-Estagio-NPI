@@ -28,6 +28,9 @@ public class Disciplina {
     )
     private List<Tag> tagsExigidas = new ArrayList<>();
 
+    @Column(name = "numero_alunos", nullable = false)
+    private Integer numeroAlunos;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getNome() { return nome; }
@@ -36,4 +39,10 @@ public class Disciplina {
     public void setCoordenador(Usuario coordenador) { this.coordenador = coordenador; }
     public List<Tag> getTagsExigidas() { return tagsExigidas; }
     public void setTagsExigidas(List<Tag> tagsExigidas) { this.tagsExigidas = tagsExigidas; }
+    public Integer getNumeroAlunos() {
+        return numeroAlunos;
+    }
+    public void setNumeroAlunos(Integer numeroAlunos) {
+        this.numeroAlunos = numeroAlunos;
+    }
 }

@@ -29,6 +29,7 @@ public class DisciplinaService {
     public DisciplinaResponseDTO createDisciplina(DisciplinaRequestDTO dto) {
         Disciplina disciplina = new Disciplina();
         disciplina.setNome(dto.getNome());
+        disciplina.setNumeroAlunos(dto.getNumeroAlunos());
 
         //faz a busca do coordenador no banco
         Usuario coordenador = usuarioRepository.findById(dto.getCoordenadorId())
@@ -51,6 +52,7 @@ public class DisciplinaService {
                 .orElseThrow(() -> new RuntimeException("Disciplina não encontrada"));
 
         disciplina.setNome(dto.getNome());
+        disciplina.setNumeroAlunos(dto.getNumeroAlunos());
 
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
             List<Tag> novasTags = tagRepository.findAllById(dto.getTagIds());
@@ -85,7 +87,8 @@ public class DisciplinaService {
         DisciplinaResponseDTO dto = new DisciplinaResponseDTO();
         dto.setId(disciplina.getId());
         dto.setNome(disciplina.getNome());
-        dto.setNomeCoordenador(disciplina.getCoordenador().getLogin()); // Aqui enviamos o email/nome
+        dto.setNomeCoordenador(disciplina.getCoordenador().getLogin());
+        dto.setNumeroAlunos(disciplina.getNumeroAlunos());
 
         List<String> tagsNames = disciplina.getTagsExigidas().stream()
                 .map(Tag::getNome)

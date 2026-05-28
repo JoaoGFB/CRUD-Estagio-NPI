@@ -7,6 +7,7 @@ public class DisciplinaResponseDTO {
     private String nome;
     private String nomeCoordenador; //envia só o nome, e não a entidade inteira
     private List<String> tagsExigidas; //tags para exibir na tela
+    private Integer numeroAlunos;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -16,4 +17,10 @@ public class DisciplinaResponseDTO {
     public void setNomeCoordenador(String nomeCoordenador) { this.nomeCoordenador = nomeCoordenador; }
     public List<String> getTagsExigidas() { return tagsExigidas; }
     public void setTagsExigidas(List<String> tagsExigidas) { this.tagsExigidas = tagsExigidas; }
+    public Integer getNumeroAlunos() {
+        return numeroAlunos;
+    }
+    public void setNumeroAlunos(Integer numeroAlunos) {
+        this.numeroAlunos = numeroAlunos;
+    }
 }
