@@ -26,5 +26,18 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             @Param("horarioInicio") LocalTime horarioInicio,
             @Param("horarioFim") LocalTime horarioFim);
 
+    //checa se o professor já está dando aula no mesmo horário, dia e período
+    @Query("SELECT COUNT(r) > 0 FROM Reserva r WHERE r.disciplina.professor.id = :professorId " +
+            "AND r.periodoLetivo.id = :periodoId " +
+            "AND r.diaDaSemana = :dia " +
+            "AND r.status IN ('APROVADA', 'PENDENTE') " +
+            "AND (r.horarioInicio < :horarioFim AND r.horarioFim > :horarioInicio)")
+    boolean existeConflitoParaProfessor(
+            @Param("professorId") Long professorId,
+            @Param("periodoId") Long periodoId,
+            @Param("dia") DayOfWeek dia,
+            @Param("horarioInicio") LocalTime horarioInicio,
+            @Param("horarioFim") LocalTime horarioFim);
+
     List<Reserva> findBySalaCampus(String campus);
 }

@@ -5,6 +5,7 @@ import java.util.List;
 public class DisciplinaRequestDTO {
     private String nome;
     private Long coordenadorId; //o react manda só o id do usuário logado
+    private Long professorId;
     private List<Long> tagIds;  //id's das características que a matéria exige
     private Integer numeroAlunos;
 
@@ -19,5 +20,11 @@ public class DisciplinaRequestDTO {
     }
     public void setNumeroAlunos(Integer numeroAlunos) {
         this.numeroAlunos = numeroAlunos;
+    }
+    public Long getProfessorId() {
+        return professorId;
+    }
+    public void setProfessorId(Long professorId) {
+        this.professorId = professorId;
     }
 }

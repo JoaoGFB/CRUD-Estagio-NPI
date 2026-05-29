@@ -3,9 +3,11 @@ package com.example.demo.service;
 import com.example.demo.dto.DisciplinaRequestDTO;
 import com.example.demo.dto.DisciplinaResponseDTO;
 import com.example.demo.model.Disciplina;
+import com.example.demo.model.Professor;
 import com.example.demo.model.Tag;
 import com.example.demo.model.Usuario;
 import com.example.demo.repository.DisciplinaRepository;
+import com.example.demo.repository.ProfessorRepository;
 import com.example.demo.repository.TagRepository;
 import com.example.demo.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
@@ -19,11 +21,13 @@ public class DisciplinaService {
     private final DisciplinaRepository disciplinaRepository;
     private final UsuarioRepository usuarioRepository;
     private final TagRepository tagRepository;
+    private final ProfessorRepository professorRepository;
 
-    public DisciplinaService(DisciplinaRepository disciplinaRepository, UsuarioRepository usuarioRepository, TagRepository tagRepository) {
+    public DisciplinaService(DisciplinaRepository disciplinaRepository, UsuarioRepository usuarioRepository, TagRepository tagRepository, ProfessorRepository professorRepository) {
         this.disciplinaRepository = disciplinaRepository;
         this.usuarioRepository = usuarioRepository;
         this.tagRepository = tagRepository;
+        this.professorRepository = professorRepository;
     }
 
     public DisciplinaResponseDTO createDisciplina(DisciplinaRequestDTO dto) {
@@ -35,6 +39,11 @@ public class DisciplinaService {
         Usuario coordenador = usuarioRepository.findById(dto.getCoordenadorId())
                 .orElseThrow(() -> new RuntimeException("Coordenador não encontrado"));
         disciplina.setCoordenador(coordenador);
+
+        //busca o professor no banco
+        Professor professor = professorRepository.findById(dto.getProfessorId())
+                .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+        disciplina.setProfessor(professor);
 
         //liga com as tags
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
@@ -53,6 +62,10 @@ public class DisciplinaService {
 
         disciplina.setNome(dto.getNome());
         disciplina.setNumeroAlunos(dto.getNumeroAlunos());
+
+        Professor professor = professorRepository.findById(dto.getProfessorId())
+                .orElseThrow(() -> new RuntimeException("Professor não encontrado"));
+        disciplina.setProfessor(professor);
 
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
             List<Tag> novasTags = tagRepository.findAllById(dto.getTagIds());
@@ -89,6 +102,9 @@ public class DisciplinaService {
         dto.setNome(disciplina.getNome());
         dto.setNomeCoordenador(disciplina.getCoordenador().getLogin());
         dto.setNumeroAlunos(disciplina.getNumeroAlunos());
+
+        if (disciplina.getProfessor() != null)
+            dto.setNomeProfessor(disciplina.getProfessor().getNome());
 
         List<String> tagsNames = disciplina.getTagsExigidas().stream()
                 .map(Tag::getNome)

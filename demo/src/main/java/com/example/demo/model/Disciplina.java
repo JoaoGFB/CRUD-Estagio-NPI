@@ -19,6 +19,10 @@ public class Disciplina {
     @JoinColumn(name = "coordenador_id", nullable = false)
     private Usuario coordenador;
 
+    @ManyToOne
+    @JoinColumn(name = "professor_id")
+    private Professor professor;
+
     //conexão com as tags
     @ManyToMany
     @JoinTable(
@@ -44,5 +48,11 @@ public class Disciplina {
     }
     public void setNumeroAlunos(Integer numeroAlunos) {
         this.numeroAlunos = numeroAlunos;
+    }
+    public Professor getProfessor() {
+        return professor;
+    }
+    public void setProfessor(Professor professor) {
+        this.professor = professor;
     }
 }

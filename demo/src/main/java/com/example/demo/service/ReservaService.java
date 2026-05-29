@@ -59,6 +59,15 @@ public class ReservaService {
         if (conflito)
             throw new IllegalArgumentException("Ação bloqueada: Já existe uma reserva (Aprovada ou Pendente) para esta sala neste horário.");
 
+        //valida se um professor não está em 2 lugares
+        boolean conflitoProfessor = reservaRepository.existeConflitoParaProfessor(
+                disciplina.getProfessor().getId(), dto.getPeriodoLetivoId(), dto.getDiaDaSemana(), dto.getHorarioInicio(), dto.getHorarioFim());
+
+        if (conflitoProfessor) {
+            throw new IllegalArgumentException("Ação bloqueada: O(A) professor(a) " + disciplina.getProfessor().getNome() +
+                    " já possui uma aula agendada em outra sala neste mesmo dia e horário.");
+        }
+
         Reserva reserva = new Reserva();
         reserva.setSala(sala);
         reserva.setDisciplina(disciplina);

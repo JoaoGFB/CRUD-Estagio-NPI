@@ -6,32 +6,12 @@ import { AuthContext } from '../contexts/AuthContext';
 
 
 interface Tag { id: number; nome: string; }
-interface Disciplina { id: number; nome: string; nomeCoordenador: string; tagsExigidas: string[]; numeroAlunos: number; }
-interface Sala { 
-  id: number; 
-  nome: string;
-  tags?: string[]; 
-  interdisciplinar: boolean; 
-  cursoVinculado: string | null;
-  capacidade: number;
-}
-interface PeriodoLetivo {
-  id: number;
-  nome: string;
-  ativo: boolean;
-}
-interface Reserva { 
-  id: number; 
-  nomeSala: string; 
-  nomeDisciplina: string;
-  nomeCoordenador: string; 
-  nomePeriodo: string;
-  diaDaSemana: string;
-  horarioInicio: string; 
-  horarioFim: string; 
-  status: string; 
-}
-interface NovaDisciplinaForm { nome: string; tagIds: string[]; numeroAlunos: number; }
+interface Professor { id: number; nome: string; }
+interface Disciplina { id: number; nome: string; nomeCoordenador: string; nomeProfessor: string; tagsExigidas: string[]; numeroAlunos: number; }
+interface Sala { id: number; nome: string; tags?: string[]; interdisciplinar: boolean; cursoVinculado: string | null; capacidade: number; }
+interface PeriodoLetivo { id: number; nome: string; ativo: boolean; }
+interface Reserva { id: number; nomeSala: string; nomeDisciplina: string; nomeCoordenador: string; nomePeriodo: string; diaDaSemana: string; horarioInicio: string; horarioFim: string; status: string; }
+interface NovaDisciplinaForm { nome: string; tagIds: string[]; numeroAlunos: number; professorId: string; }
 
 const DIAS_DA_SEMANA = [
   { value: 'MONDAY', label: 'Segunda-feira' },
@@ -47,6 +27,7 @@ const traduzirDia = (diaEmIngles: string) => {
   return diaEncontrado ? diaEncontrado.label : diaEmIngles;
 };
 
+// Ícones
 const IconBook = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
 const IconPlus = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>);
 const IconEdit = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
@@ -54,6 +35,8 @@ const IconTrash = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24
 const IconCalendar = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>);
 const IconCheck = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
 const IconUsers = () => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
+const IconUserDetail = () => (<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>);
+
 
 export const Disciplinas = () => {
   const { role, userId, curso, campus } = useContext(AuthContext);
@@ -62,6 +45,7 @@ export const Disciplinas = () => {
 
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
+  const [professores, setProfessores] = useState<Professor[]>([]);
   const [salas, setSalas] = useState<Sala[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [periodos, setPeriodos] = useState<PeriodoLetivo[]>([]); 
@@ -84,16 +68,15 @@ export const Disciplinas = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const urlReservas = (isGestor && campus) 
-          ? `/reservas/campus/${campus}` 
-          : '/reservas';
+        const urlReservas = (isGestor && campus) ? `/reservas/campus/${campus}` : '/reservas';
 
-        const [disciplinasRes, tagsRes, salasRes, reservasRes, periodosRes] = await Promise.all([
+        const [disciplinasRes, tagsRes, salasRes, reservasRes, periodosRes, professoresRes] = await Promise.all([
           isCoordenador ? api.get(`/disciplinas/coordenador/${userId}`) : api.get('/disciplinas'),
           api.get('/tags'),
           api.get('/salas'),
           api.get(urlReservas),
-          api.get('/periodos-letivos').catch(() => ({ data: [{ id: 1, nome: '1º Bimestre (Mock)', ativo: true }] }))
+          api.get('/periodos-letivos').catch(() => ({ data: [] })),
+          api.get('/professores').catch(() => ({ data: [] }))
         ]);
         
         let disciplinasParaMostrar = disciplinasRes.data;
@@ -109,6 +92,7 @@ export const Disciplinas = () => {
         setSalas(salasRes.data);
         setReservas(reservasRes.data);
         setPeriodos(periodosRes.data);
+        setProfessores(professoresRes.data);
 
       } catch (error) {
         console.error('Erro ao buscar dados:', error);
@@ -121,13 +105,18 @@ export const Disciplinas = () => {
 
   const cancelarEdicao = () => {
     setIdEditando(null);
-    reset({ nome: '', numeroAlunos: 0, tagIds: [] });
+    reset({ nome: '', numeroAlunos: 0, tagIds: [], professorId: '' });
   };
 
   const iniciarEdicao = (disciplina: Disciplina) => {
     setIdEditando(disciplina.id);
     setValue('nome', disciplina.nome);
     setValue('numeroAlunos', disciplina.numeroAlunos);
+    
+    //mapeia o professorId baseado no nome que veio do dto
+    const profEncontrado = professores.find(p => p.nome === disciplina.nomeProfessor);
+    setValue('professorId', profEncontrado ? String(profEncontrado.id) : '');
+
     const idsDasTags = disciplina.tagsExigidas.map(nomeTag => String(tagsDisponiveis.find(t => t.nome === nomeTag)?.id)).filter(Boolean);
     setValue('tagIds', idsDasTags);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -139,6 +128,7 @@ export const Disciplinas = () => {
         nome: data.nome,
         coordenadorId: userId || 0,
         numeroAlunos: Number(data.numeroAlunos),
+        professorId: Number(data.professorId),
         tagIds: data.tagIds ? data.tagIds.map(Number) : []
       };
 
@@ -173,7 +163,6 @@ export const Disciplinas = () => {
     }
   };
 
-  //lógica do abac
   const getSalasCompativeis = () => {
     if (!disciplinaParaEnsalar) return [];
     const exigencias = disciplinaParaEnsalar.tagsExigidas;
@@ -185,7 +174,6 @@ export const Disciplinas = () => {
       const temPermissaoDeAcesso = sala.interdisciplinar === true || cursoSalaNormalizado === meuCursoNormalizado;
       if (isCoordenador && !temPermissaoDeAcesso) return false;
       
-      //ajustes para sugerir salas que sejam até 15% menores que a turma, uma leve superlotação
       if (sala.capacidade < (qtdAlunos * 0.85)) return false;
 
       if (exigencias.length > 0) {
@@ -196,7 +184,6 @@ export const Disciplinas = () => {
       return true;
     });
 
-    //retorna uma ordenação das salas que mais se adequam a disciplina, baseado na capacidade
     return salasFiltradas.sort((a, b) => Math.abs(a.capacidade - qtdAlunos) - Math.abs(b.capacidade - qtdAlunos));
   };
 
@@ -292,8 +279,17 @@ export const Disciplinas = () => {
               </div>
             </div>
 
+            {/*selecionar prefessor*/}
             <div>
-              <label className="form-label" style={{ marginBottom: '0.5rem' }}>Equipamentos / Características Exigidas</label>
+              <label className="form-label" style={{ marginBottom: '0.5rem' }}>Professor(a) Responsável *</label>
+              <select className="form-input" required {...register('professorId', { required: true })}>
+                <option value="">Selecione o professor...</option>
+                {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="form-label" style={{ marginBottom: '0.5rem', marginTop: '0.5rem' }}>Equipamentos / Características Exigidas</label>
               <div className="tags-grid" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 {tagsDisponiveis.map((tag) => (
                   <div key={tag.id} className="tag-checkbox-item" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -336,8 +332,10 @@ export const Disciplinas = () => {
                   
                   <div className="room-card-header">
                     <h3 className="room-card-name">{disciplina.nome}</h3>
-                    <div className="room-card-meta" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span>Coord: {disciplina.nomeCoordenador}</span>
+                    
+                    {/*informações do coordenador e professores*/}
+                    <div className="room-card-meta" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '8px' }}>
+                      <span style={{ color: 'var(--aqua-600)' }}><IconUserDetail /> Prof: {disciplina.nomeProfessor || 'Não atribuído'}</span>
                       <span className="dot">·</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <IconUsers /> {disciplina.numeroAlunos} alunos
@@ -345,7 +343,7 @@ export const Disciplinas = () => {
                     </div>
                   </div>
                   
-                  <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
                     <small style={{ fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '0.5rem' }}>Exige:</small>
                     <div className="room-tags">
                       {disciplina.tagsExigidas.length > 0 

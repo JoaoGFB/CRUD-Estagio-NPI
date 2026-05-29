@@ -10,6 +10,7 @@ import { Disciplinas } from './pages/Disciplinas';
 import { Usuarios } from './pages/Usuarios';
 import { PrivateRoute } from './components/PrivateRoute';//import da guarda de rotas
 import { Periodos } from './pages/Periodos';
+import { Professores } from './pages/Professores';
 
 const RoutesConfig = () => {
   //extração da role do contexto para fazer o redirecionamento no login
@@ -81,6 +82,16 @@ const RoutesConfig = () => {
         }/>
       
       
+      {/*rota exclusiva do coordenador*/}
+      <Route 
+        path="/professores" 
+        element={
+          <PrivateRoute rolesRequeridos={['COORDENADOR']}>
+            <Layout><Professores /></Layout>
+          </PrivateRoute>
+        }/>  
+
+
       {/*rotas compartilhadas entre gestor e coordenador*/}
       <Route
         path="/disciplinas"
