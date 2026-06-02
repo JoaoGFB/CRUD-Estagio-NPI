@@ -78,7 +78,7 @@ export const Salas = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Traz o role e o campus do usuário atual do contexto
+  //traz o role e o campus do usuário atual
   const { role, campus } = useContext(AuthContext);
 
   useEffect(() => {
@@ -200,18 +200,18 @@ export const Salas = () => {
 
               <div className="room-card-actions">
                 <button
-                  className="btn btn-warning btn-sm"
-                  onClick={() => navigate(`/salas/editar/${sala.id}`)}
-                >
-                  <IconEdit />
-                  Editar
-                </button>
-                <button
                   className="btn btn-danger btn-sm"
                   onClick={() => deletarSala(sala.id)}
                 >
                   <IconTrash />
                   Excluir
+                </button>
+                <button
+                  className="btn btn-warning btn-sm"
+                  onClick={() => navigate(`/salas/editar/${sala.id}`)}
+                >
+                  <IconEdit />
+                  Editar
                 </button>
               </div>
             </div>

@@ -113,7 +113,7 @@ export const Disciplinas = () => {
     setValue('nome', disciplina.nome);
     setValue('numeroAlunos', disciplina.numeroAlunos);
     
-    //mapeia o professorId baseado no nome que veio do dto
+    //mapeia o professorId baseado no nome que veio do DTO
     const profEncontrado = professores.find(p => p.nome === disciplina.nomeProfessor);
     setValue('professorId', profEncontrado ? String(profEncontrado.id) : '');
 
@@ -255,14 +255,14 @@ export const Disciplinas = () => {
   const salasDisponiveis = getSalasCompativeis();
 
   return (
-    <div className="tags-page">
+    <div>
       <div className="page-header">
         <h2><IconBook /> {isCoordenador ? 'Minhas Disciplinas' : 'Painel de Ensalamento'}</h2>
         <p>Gere os horários, aloque as salas e gerencie as aprovações.</p>
       </div>
 
       {isCoordenador && (
-        <div className="tag-add-panel" style={{ marginBottom: '2rem', border: idEditando ? '2px solid #ffc107' : 'none' }}>
+        <div className="tag-add-panel" style={{ maxWidth: '900px', marginBottom: '2rem', border: idEditando ? '2px solid #ffc107' : 'none' }}>
           <div className="tags-section-title" style={{ marginBottom: '16px', color: idEditando ? '#d39e00' : 'inherit' }}>
             <IconPlus /> {idEditando ? 'Editar Disciplina' : 'Nova Disciplina'}
           </div>
@@ -279,7 +279,7 @@ export const Disciplinas = () => {
               </div>
             </div>
 
-            {/*selecionar prefessor*/}
+            {/*escolher professor*/}
             <div>
               <label className="form-label" style={{ marginBottom: '0.5rem' }}>Professor(a) Responsável *</label>
               <select className="form-input" required {...register('professorId', { required: true })}>
@@ -333,7 +333,7 @@ export const Disciplinas = () => {
                   <div className="room-card-header">
                     <h3 className="room-card-name">{disciplina.nome}</h3>
                     
-                    {/*informações do coordenador e professores*/}
+                    {/*informações do coordenador e professor*/}
                     <div className="room-card-meta" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '8px' }}>
                       <span style={{ color: 'var(--aqua-600)' }}><IconUserDetail /> Prof: {disciplina.nomeProfessor || 'Não atribuído'}</span>
                       <span className="dot">·</span>
@@ -388,14 +388,15 @@ export const Disciplinas = () => {
                         
                         {isGestor && (
                           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                            <button className="btn btn-danger" style={{ flex: reservaVinculada.status === 'PENDENTE' ? 1 : '100%', padding: '0.4rem' }} onClick={() => deletarReserva(reservaVinculada.id)}>
+                              <IconTrash /> Cancelar
+                            </button>
+
                             {reservaVinculada.status === 'PENDENTE' && (
                               <button className="btn btn-success" style={{ flex: 1, padding: '0.4rem' }} onClick={() => aprovarReserva(reservaVinculada.id)}>
                                 <IconCheck /> Aprovar
                               </button>
                             )}
-                            <button className="btn btn-danger" style={{ flex: reservaVinculada.status === 'PENDENTE' ? 1 : '100%', padding: '0.4rem' }} onClick={() => deletarReserva(reservaVinculada.id)}>
-                              <IconTrash /> Cancelar
-                            </button>
                           </div>
                         )}
                       </div>
@@ -404,8 +405,8 @@ export const Disciplinas = () => {
 
                   {isCoordenador && !reservaVinculada && (
                     <div className="room-card-actions" style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-                      <button className="btn btn-warning btn-sm" onClick={() => iniciarEdicao(disciplina)}><IconEdit /> Editar</button>
                       <button className="btn btn-danger btn-sm" onClick={() => deletarDisciplina(disciplina.id)}><IconTrash /> Excluir</button>
+                      <button className="btn btn-warning btn-sm" onClick={() => iniciarEdicao(disciplina)}><IconEdit /> Editar</button>
                     </div>
                   )}
                 </div>
