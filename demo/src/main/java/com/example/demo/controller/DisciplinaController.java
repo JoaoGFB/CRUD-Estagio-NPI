@@ -32,7 +32,7 @@ public class DisciplinaController {
         return ResponseEntity.ok(disciplinaService.getAllDisciplinas());
     }
 
-    // Rota para o Coordenador ver apenas o próprio território
+    //rota para o coordenador ver apenas o próprio ambiente
     @GetMapping("/coordenador/{id}")
     public ResponseEntity<List<DisciplinaResponseDTO>> getByCoordenador(@PathVariable Long id) {
         return ResponseEntity.ok(disciplinaService.getDisciplinasByCoordenador(id));
