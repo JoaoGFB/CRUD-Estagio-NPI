@@ -123,7 +123,7 @@ public class ReservaService {
     private ReservaResponseDTO mapToResponse(Reserva reserva) {
         ReservaResponseDTO dto = new ReservaResponseDTO();
         dto.setId(reserva.getId());
-        dto.setNomeSala(reserva.getSala().getNome());
+        dto.setNomeSala(reserva.getSala().getNome().getNome());
         dto.setNomeDisciplina(reserva.getDisciplina().getNome());
         dto.setNomeCoordenador(reserva.getDisciplina().getCoordenador().getLogin());
 

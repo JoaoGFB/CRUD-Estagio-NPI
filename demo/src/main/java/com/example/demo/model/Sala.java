@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import com.example.demo.model.enums.NomeSala;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +12,9 @@ public class Sala {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String nome;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private NomeSala nome;
 
     @Column(nullable = false, length = 100)
     private String campus;
@@ -40,10 +42,10 @@ public class Sala {
     public void setId(Long id) {
         this.id = id;
     }
-    public String getNome() {
+    public NomeSala getNome() {
         return nome;
     }
-    public void setNome(String nome) {
+    public void setNome(NomeSala nome) {
         this.nome = nome;
     }
     public String getCampus() {

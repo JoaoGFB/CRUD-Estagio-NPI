@@ -1,26 +1,21 @@
 package com.example.demo.dto;
 
+import com.example.demo.model.enums.NomeSala;
+
 import java.util.List;
 
 public class SalaRequestDTO {
-    private String nome;
-    private String campus;
+    private NomeSala nome;
     private Integer capacidade;
     private Boolean interdisciplinar;
     private String cursoVinculado;
-    private List<Long> tagIds; //o frontend envia os IDs das tags
+    private List<Long> tagIds;//o frontend envia os IDs das tags
 
-    public String getNome() {
+    public NomeSala getNome() {
         return nome;
     }
-    public void setNome(String nome) {
+    public void setNome(NomeSala nome) {
         this.nome = nome;
-    }
-    public String getCampus() {
-        return campus;
-    }
-    public void setCampus(String campus) {
-        this.campus = campus;
     }
     public Integer getCapacidade() {
         return capacidade;

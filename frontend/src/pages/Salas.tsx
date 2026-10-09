@@ -25,7 +25,9 @@ const IconPlus = () => (
 const IconDoor = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/>
+    <path d="M13 4h3a2 2 0 0 1 2 2v14"/>
+    <path d="M2 20h3"/>
+    <path d="M13 20h9"/>
     <path d="M10 12v.01"/>
     <path d="M13 4.562v16.157a1 1 0 0 1-1.279.961L5 19V5.562a2 2 0 0 1 1.279-1.87l6-2.25a1 1 0 0 1 1.279.962v.118z"/>
   </svg>
@@ -76,46 +78,61 @@ const IconInbox = () => (
 export const Salas = () => {
   const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
 
-  //traz o role e o campus do usuário atual
-  const { role, campus } = useContext(AuthContext);
+  const { campus } = useContext(AuthContext);
 
   useEffect(() => {
     const buscarSalas = async () => {
       try {
+        // O backend já retorna somente as salas
+        // permitidas para o usuário autenticado.
         const response = await api.get('/salas');
-        
-        // Aplica o filtro de visualização por Campus!
-        const salasFiltradas = role === 'GESTOR' && campus
-          ? response.data.filter((s: Sala) => s.campus === campus)
-          : response.data;
-          
-        setSalas(salasFiltradas);
+
+        setSalas(response.data);
+
       } catch (error) {
         console.error('Erro ao buscar salas:', error);
+
         alert('Sua sessão expirou ou ocorreu um erro.');
+
       } finally {
         setLoading(false);
       }
     };
+
     buscarSalas();
-  }, [role, campus]);
+  }, []);
 
   const deletarSala = async (id: number) => {
+
     if (window.confirm('Tem certeza que deseja excluir esta sala?')) {
+
       try {
+
         await api.delete(`/salas/${id}`);
-        setSalas((prev) => prev.filter((s) => s.id !== id));
+
+        setSalas((prev) =>
+          prev.filter((s) => s.id !== id)
+        );
+
       } catch (error) {
+
         console.error('Erro ao deletar sala:', error);
-        
-        if (isAxiosError(error) && error.response && typeof error.response.data === 'string') {
+
+        if (
+          isAxiosError(error) &&
+          error.response &&
+          typeof error.response.data === 'string'
+        ) {
           alert(error.response.data);
         } else {
           alert('Erro ao excluir sala.');
         }
+
       }
+
     }
   };
 
@@ -130,15 +147,29 @@ export const Salas = () => {
 
   return (
     <div>
-      {/*cabeçalho da página */}
+
+      {/* cabeçalho da página */}
       <div className="page-actions">
-        <div className="page-header" style={{ marginBottom: 0 }}>
+
+        <div
+          className="page-header"
+          style={{ marginBottom: 0 }}
+        >
+
           <h2>
             <IconDoor />
             Catálogo de Salas ({campus})
           </h2>
-          <p>{salas.length} {salas.length === 1 ? 'sala disponível' : 'salas disponíveis'}</p>
+
+          <p>
+            {salas.length}{' '}
+            {salas.length === 1
+              ? 'sala disponível'
+              : 'salas disponíveis'}
+          </p>
+
         </div>
+
         <button
           className="btn btn-success"
           onClick={() => navigate('/salas/nova')}
@@ -146,13 +177,20 @@ export const Salas = () => {
           <IconPlus />
           Nova Sala
         </button>
+
       </div>
 
-      {/*cards*/}
+      {/* cards */}
       {salas.length === 0 ? (
+
         <div className="empty-state">
+
           <IconInbox />
-          <p>Nenhuma sala cadastrada no seu campus ainda.</p>
+
+          <p>
+            Nenhuma sala cadastrada no seu campus ainda.
+          </p>
+
           <button
             className="btn btn-primary"
             style={{ marginTop: '16px' }}
@@ -161,44 +199,88 @@ export const Salas = () => {
             <IconPlus />
             Cadastrar primeira sala
           </button>
+
         </div>
+
       ) : (
+
         <div className="rooms-grid">
+
           {salas.map((sala) => (
-            <div key={sala.id} className="room-card">
-              {/*reflexo ao fundo do card */}
+
+            <div
+              key={sala.id}
+              className="room-card"
+            >
+
+              {/* reflexo ao fundo do card */}
               <div className="room-card-inner-shine" />
 
-              {/*cabeçalho dos cards*/}
+              {/* cabeçalho dos cards */}
               <div className="room-card-header">
-                <h3 className="room-card-name">{sala.nome}</h3>
+
+                <h3 className="room-card-name">
+                  {sala.nome}
+                </h3>
+
                 <div className="room-card-meta">
+
                   <IconMapPin />
+
                   {sala.campus}
-                  <span className="dot">·</span>
+
+                  <span className="dot">
+                    ·
+                  </span>
+
                   <IconUsers />
+
                   {sala.capacidade} lugares
+
                 </div>
+
               </div>
 
-              {/*badge com o tipo*/}
-              <span className={`room-badge ${sala.interdisciplinar ? 'room-badge-multi' : 'room-badge-course'}`}>
+              {/* badge com o tipo */}
+              <span
+                className={`room-badge ${
+                  sala.interdisciplinar
+                    ? 'room-badge-multi'
+                    : 'room-badge-course'
+                }`}
+              >
+
                 {sala.interdisciplinar
                   ? 'Multidisciplinar'
                   : sala.cursoVinculado
                     ? sala.cursoVinculado
                     : 'Sem curso vinculado'}
+
               </span>
 
+              {/* tags */}
               {sala.tags.length > 0 && (
+
                 <div className="room-tags">
+
                   {sala.tags.map((tag, i) => (
-                    <span key={i} className="tag-chip">{tag}</span>
+
+                    <span
+                      key={i}
+                      className="tag-chip"
+                    >
+                      {tag}
+                    </span>
+
                   ))}
+
                 </div>
+
               )}
 
+              {/* ações */}
               <div className="room-card-actions">
+
                 <button
                   className="btn btn-danger btn-sm"
                   onClick={() => deletarSala(sala.id)}
@@ -206,18 +288,27 @@ export const Salas = () => {
                   <IconTrash />
                   Excluir
                 </button>
+
                 <button
                   className="btn btn-warning btn-sm"
-                  onClick={() => navigate(`/salas/editar/${sala.id}`)}
+                  onClick={() =>
+                    navigate(`/salas/editar/${sala.id}`)
+                  }
                 >
                   <IconEdit />
                   Editar
                 </button>
+
               </div>
+
             </div>
+
           ))}
+
         </div>
+
       )}
+
     </div>
   );
 };

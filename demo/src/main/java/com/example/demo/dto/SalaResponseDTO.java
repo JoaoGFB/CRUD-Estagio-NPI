@@ -9,7 +9,7 @@ public class SalaResponseDTO {
     private Integer capacidade;
     private Boolean interdisciplinar;
     private String cursoVinculado;
-    private List<String> tags; //o frontend recebe os nomes para exibir
+    private List<String> tags;//o frontend recebe os nomes para exibir
 
     public Long getId() {
         return id;
