@@ -1,8 +1,9 @@
+
 package com.example.demo.controller;
 
 import com.example.demo.model.PeriodoLetivo;
 import com.example.demo.model.Usuario;
-import com.example.demo.repository.PeriodoLetivoRepository;
+import com.example.demo.service.PeriodoLetivoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,44 +16,67 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class PeriodoLetivoController {
 
-    private final PeriodoLetivoRepository periodoLetivoRepository;
+    private final PeriodoLetivoService periodoLetivoService;
 
-    public PeriodoLetivoController(PeriodoLetivoRepository periodoLetivoRepository) {
-        this.periodoLetivoRepository = periodoLetivoRepository;
+    public PeriodoLetivoController(PeriodoLetivoService periodoLetivoService) {
+        this.periodoLetivoService = periodoLetivoService;
     }
 
     @GetMapping
     public ResponseEntity<List<PeriodoLetivo>> listarTodos() {
-        return ResponseEntity.ok(periodoLetivoRepository.findAll());
+        return ResponseEntity.ok(periodoLetivoService.listarTodos());
     }
 
-    //criar um novo período (somente gestor da sede)
     @PostMapping
-    public ResponseEntity<?> criar(@RequestBody PeriodoLetivo periodoLetivo, Authentication auth) {
-        Usuario usuarioLogado = (Usuario) auth.getPrincipal();
-        if (!"GESTOR".equals(usuarioLogado.getRole()) || !"SEDE".equals(usuarioLogado.getCampus())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Ação bloqueada: Apenas o Gestor do campus SEDE possui autoridade para criar períodos letivos.");
-        }
+    public ResponseEntity<?> criar(
+            @RequestBody PeriodoLetivo periodo,
+            Authentication auth) {
 
-        PeriodoLetivo salvo = periodoLetivoRepository.save(periodoLetivo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        if (!gestorDaSede(auth))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o gestor da SEDE pode criar períodos.");
+
+        try {
+            PeriodoLetivo salvo = periodoLetivoService.criar(periodo);
+            return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    //ativar ou desativar um período (somente o gestor da sede)
-    @PutMapping("/{id}/status")
-    public ResponseEntity<?> alterarStatus(@PathVariable Long id, @RequestParam Boolean ativo, Authentication auth) {
-        Usuario usuarioLogado = (Usuario) auth.getPrincipal();
-        if (!"GESTOR".equals(usuarioLogado.getRole()) || !"SEDE".equals(usuarioLogado.getCampus())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Ação bloqueada: Apenas o Gestor do campus SEDE possui autoridade para alterar o status de um período letivo.");
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editar(
+            @PathVariable Long id,
+            @RequestBody PeriodoLetivo dados,
+            Authentication auth) {
+
+        if (!gestorDaSede(auth))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o gestor da SEDE pode editar períodos.");
+
+        try {
+            return ResponseEntity.ok(periodoLetivoService.editar(id, dados));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
 
-        PeriodoLetivo periodo = periodoLetivoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Período letivo não encontrado"));
+    @PutMapping("/{id}/encerrar")
+    public ResponseEntity<?> encerrar(
+            @PathVariable Long id,
+            Authentication auth) {
 
-        periodo.setAtivo(ativo);
-        PeriodoLetivo atualizado = periodoLetivoRepository.save(periodo);
-        return ResponseEntity.ok(atualizado);
+        if (!gestorDaSede(auth))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o gestor da SEDE pode encerrar períodos.");
+
+        try {
+            return ResponseEntity.ok(periodoLetivoService.encerrar(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    private boolean gestorDaSede(Authentication auth) {
+        if (auth == null || !(auth.getPrincipal() instanceof Usuario usuario))
+            return false;
+        return "GESTOR".equals(usuario.getRole()) && "SEDE".equalsIgnoreCase(usuario.getCampus());
     }
 }

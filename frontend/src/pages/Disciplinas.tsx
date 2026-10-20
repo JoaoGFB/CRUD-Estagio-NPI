@@ -9,7 +9,12 @@ interface Tag { id: number; nome: string; }
 interface Professor { id: number; nome: string; }
 interface Disciplina { id: number; nome: string; nomeCoordenador: string; nomeProfessor: string; tagsExigidas: string[]; numeroAlunos: number; }
 interface Sala { id: number; nome: string; tags?: string[]; interdisciplinar: boolean; cursoVinculado: string | null; capacidade: number; }
-interface PeriodoLetivo { id: number; nome: string; ativo: boolean; }
+interface PeriodoLetivo {
+  id: number;
+  nome: string;
+  dataFim: string;
+  ativo: boolean;
+}
 interface Reserva { id: number; nomeSala: string; nomeDisciplina: string; nomeCoordenador: string; nomePeriodo: string; diaDaSemana: string; horarioInicio: string; horarioFim: string; status: string; }
 interface NovaDisciplinaForm { nome: string; tagIds: string[]; numeroAlunos: number; professorId: string; }
 
@@ -254,6 +259,23 @@ export const Disciplinas = () => {
 
   const salasDisponiveis = getSalasCompativeis();
 
+  
+const periodoAceitaReservas = (periodo: PeriodoLetivo) => {
+  if (!periodo.ativo || !periodo.dataFim) {
+    return false;
+  }
+
+  const [ano, mes, dia] = periodo.dataFim.split('-').map(Number);
+  const dataFim = new Date(ano, mes - 1, dia);
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  dataFim.setHours(0, 0, 0, 0);
+
+  return dataFim >= hoje;
+};
+
+
   return (
     <div>
       <div className="page-header">
@@ -461,10 +483,14 @@ export const Disciplinas = () => {
                     value={formReserva.periodoLetivoId} 
                     onChange={e => setFormReserva({...formReserva, periodoLetivoId: e.target.value})}
                   >
+                    
                     <option value="">Selecione...</option>
-                    {periodos.filter(p => p.ativo).map(p => (
-                      <option key={p.id} value={p.id}>{p.nome}</option>
+                    {periodos.filter(periodoAceitaReservas).map(periodo => (
+                      <option key={periodo.id} value={periodo.id}>
+                        {periodo.nome}
+                      </option>
                     ))}
+
                   </select>
                 </div>
                 

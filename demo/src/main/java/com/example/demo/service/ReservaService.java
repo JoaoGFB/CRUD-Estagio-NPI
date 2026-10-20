@@ -44,8 +44,21 @@ public class ReservaService {
                     + disciplina.getNumeroAlunos() + " alunos).");
         }
 
-        PeriodoLetivo periodo = periodoLetivoRepository.findById(dto.getPeriodoLetivoId())
-                .orElseThrow(() -> new RuntimeException("Período Letivo não encontrado"));
+        //PeriodoLetivo periodo = periodoLetivoRepository.findById(dto.getPeriodoLetivoId()).orElseThrow(() -> new RuntimeException("Período Letivo não encontrado"));
+        PeriodoLetivo periodo = periodoLetivoRepository
+                .findById(dto.getPeriodoLetivoId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Período letivo não encontrado."));
+
+        if (!Boolean.TRUE.equals(periodo.getAtivo()))
+            throw new IllegalArgumentException("Este período está encerrado e não aceita novas reservas.");
+
+        if (periodo.getDataFim() == null || periodo.getDataFim().isBefore(java.time.LocalDate.now())) {
+            periodo.setAtivo(false);
+            periodoLetivoRepository.save(periodo);
+            throw new IllegalArgumentException("O prazo deste período terminou. Não é possível associar novas reservas.");
+        }
+
 
         List<Long> tagsSalaIds = sala.getTags().stream().map(Tag::getId).collect(Collectors.toList());
         List<Long> tagsDisciplinaIds = disciplina.getTagsExigidas().stream().map(Tag::getId).collect(Collectors.toList());
