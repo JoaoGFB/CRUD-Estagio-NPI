@@ -8,6 +8,7 @@ public class DisciplinaRequestDTO {
     private Long professorId;
     private List<Long> tagIds;  //id's das características que a matéria exige
     private Integer numeroAlunos;
+    private Long turmaId;
 
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
@@ -26,5 +27,11 @@ public class DisciplinaRequestDTO {
     }
     public void setProfessorId(Long professorId) {
         this.professorId = professorId;
+    }
+    public Long getTurmaId() {
+        return turmaId;
+    }
+    public void setTurmaId(Long turmaId) {
+        this.turmaId = turmaId;
     }
 }

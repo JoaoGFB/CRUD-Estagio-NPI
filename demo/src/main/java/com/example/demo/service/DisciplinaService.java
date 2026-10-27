@@ -2,14 +2,8 @@ package com.example.demo.service;
 
 import com.example.demo.dto.DisciplinaRequestDTO;
 import com.example.demo.dto.DisciplinaResponseDTO;
-import com.example.demo.model.Disciplina;
-import com.example.demo.model.Professor;
-import com.example.demo.model.Tag;
-import com.example.demo.model.Usuario;
-import com.example.demo.repository.DisciplinaRepository;
-import com.example.demo.repository.ProfessorRepository;
-import com.example.demo.repository.TagRepository;
-import com.example.demo.repository.UsuarioRepository;
+import com.example.demo.model.*;
+import com.example.demo.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,17 +11,18 @@ import java.util.stream.Collectors;
 
 @Service
 public class DisciplinaService {
-
     private final DisciplinaRepository disciplinaRepository;
     private final UsuarioRepository usuarioRepository;
     private final TagRepository tagRepository;
     private final ProfessorRepository professorRepository;
+    private final TurmaRepository turmaRepository;
 
-    public DisciplinaService(DisciplinaRepository disciplinaRepository, UsuarioRepository usuarioRepository, TagRepository tagRepository, ProfessorRepository professorRepository) {
+    public DisciplinaService(DisciplinaRepository disciplinaRepository, UsuarioRepository usuarioRepository, TagRepository tagRepository, ProfessorRepository professorRepository, TurmaRepository turmaRepository) {
         this.disciplinaRepository = disciplinaRepository;
         this.usuarioRepository = usuarioRepository;
         this.tagRepository = tagRepository;
         this.professorRepository = professorRepository;
+        this.turmaRepository = turmaRepository;
     }
 
     public DisciplinaResponseDTO createDisciplina(DisciplinaRequestDTO dto) {
@@ -51,6 +46,16 @@ public class DisciplinaService {
             disciplina.setTagsExigidas(tags);
         }
 
+        if (dto.getTurmaId() != null) {
+            Turma turma = turmaRepository.findById(dto.getTurmaId())
+                    .orElseThrow(() ->
+                            new IllegalArgumentException("Turma não encontrada."));
+
+            disciplina.setTurma(turma);
+        } else {
+            disciplina.setTurma(null);
+        }
+
         Disciplina salva = disciplinaRepository.save(disciplina);
         return mapToResponse(salva);
     }
@@ -72,6 +77,13 @@ public class DisciplinaService {
             disciplina.setTagsExigidas(novasTags);
         } else
             disciplina.getTagsExigidas().clear();
+
+        if (dto.getTurmaId() != null) {
+            Turma turma = turmaRepository.findById(dto.getTurmaId())
+                    .orElseThrow(() -> new IllegalArgumentException("Turma não encontrada."));
+            disciplina.setTurma(turma);
+        } else
+            disciplina.setTurma(null);
 
         Disciplina atualizada = disciplinaRepository.save(disciplina);
         return mapToResponse(atualizada);
@@ -110,6 +122,16 @@ public class DisciplinaService {
                 .map(Tag::getNome)
                 .collect(Collectors.toList());
         dto.setTagsExigidas(tagsNames);
+
+
+        if (disciplina.getTurma() != null) {
+            dto.setTurmaId(disciplina.getTurma().getId());
+            dto.setNomeTurma(disciplina.getTurma().getNome());
+            dto.setCodigoDisciplinaTurma(
+                    disciplina.getTurma().getCodigoDisciplina());
+            dto.setGrupoDisciplina(
+                    disciplina.getTurma().getGrupoDisciplina());
+        }
 
         return dto;
     }

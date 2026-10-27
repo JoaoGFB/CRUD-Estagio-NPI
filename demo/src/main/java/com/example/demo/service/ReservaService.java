@@ -38,10 +38,21 @@ public class ReservaService {
 
         //valida a capacidade com uma tolerância de até 15% de superlotação
         double capacidadeMinimaExigida = disciplina.getNumeroAlunos() * 0.85;
-        if (sala.getCapacidade() < capacidadeMinimaExigida) {
-            throw new IllegalArgumentException("Ação bloqueada: A capacidade da sala ("
-                    + sala.getCapacidade() + " lugares) é muito inferior ao número de alunos da turma ("
-                    + disciplina.getNumeroAlunos() + " alunos).");
+//        if (sala.getCapacidade() < capacidadeMinimaExigida) {
+//            throw new IllegalArgumentException("Ação bloqueada: A capacidade da sala ("
+//                    + sala.getCapacidade() + " lugares) é muito inferior ao número de alunos da turma ("
+//                    + disciplina.getNumeroAlunos() + " alunos).");
+//        }
+        int quantidadeAlunos;
+        if (disciplina.getTurma() != null)
+            quantidadeAlunos = disciplina.getTurma().getCapacidade();
+        else
+            quantidadeAlunos = disciplina.getNumeroAlunos();
+        if (sala.getCapacidade() < quantidadeAlunos) {
+            throw new IllegalArgumentException(
+                    "A sala escolhida não possui capacidade suficiente. "
+                            + "Capacidade da sala: " + sala.getCapacidade()
+                            + "; alunos previstos: " + quantidadeAlunos + ".");
         }
 
         //PeriodoLetivo periodo = periodoLetivoRepository.findById(dto.getPeriodoLetivoId()).orElseThrow(() -> new RuntimeException("Período Letivo não encontrado"));

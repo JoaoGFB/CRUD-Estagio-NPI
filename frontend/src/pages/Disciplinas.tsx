@@ -7,7 +7,8 @@ import { AuthContext } from '../contexts/AuthContext';
 
 interface Tag { id: number; nome: string; }
 interface Professor { id: number; nome: string; }
-interface Disciplina { id: number; nome: string; nomeCoordenador: string; nomeProfessor: string; tagsExigidas: string[]; numeroAlunos: number; }
+interface Turma { id: number; nome: string; grupoDisciplina: string; codigoDisciplina: string; capacidade: number; }
+interface Disciplina { id: number; nome: string; nomeCoordenador: string; nomeProfessor: string; tagsExigidas: string[]; numeroAlunos: number; turmaId?: number | null; nomeTurma?: string | null; codigoDisciplinaTurma?: string | null; grupoDisciplina?: string | null; }
 interface Sala { id: number; nome: string; tags?: string[]; interdisciplinar: boolean; cursoVinculado: string | null; capacidade: number; }
 interface PeriodoLetivo {
   id: number;
@@ -16,7 +17,7 @@ interface PeriodoLetivo {
   ativo: boolean;
 }
 interface Reserva { id: number; nomeSala: string; nomeDisciplina: string; nomeCoordenador: string; nomePeriodo: string; diaDaSemana: string; horarioInicio: string; horarioFim: string; status: string; }
-interface NovaDisciplinaForm { nome: string; tagIds: string[]; numeroAlunos: number; professorId: string; }
+interface NovaDisciplinaForm { nome: string; tagIds: string[]; numeroAlunos: number; professorId: string; turmaId: string; }
 
 const DIAS_DA_SEMANA = [
   { value: 'MONDAY', label: 'Segunda-feira' },
@@ -51,6 +52,7 @@ export const Disciplinas = () => {
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [tagsDisponiveis, setTagsDisponiveis] = useState<Tag[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
+  const [turmas, setTurmas] = useState<Turma[]>([]);
   const [salas, setSalas] = useState<Sala[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [periodos, setPeriodos] = useState<PeriodoLetivo[]>([]); 
@@ -75,13 +77,14 @@ export const Disciplinas = () => {
       try {
         const urlReservas = (isGestor && campus) ? `/reservas/campus/${campus}` : '/reservas';
         //o coordenador não ve todas as disiciplinas
-        const [disciplinasRes, tagsRes, salasRes, reservasRes, periodosRes, professoresRes] = await Promise.all([
+        const [disciplinasRes, tagsRes, salasRes, reservasRes, periodosRes, professoresRes, turmasRes] = await Promise.all([
           isCoordenador ? api.get(`/disciplinas/coordenador/${userId}`) : api.get('/disciplinas'),
           api.get('/tags'),
           api.get('/salas'),
           api.get(urlReservas),
           api.get('/periodos-letivos').catch(() => ({ data: [] })),
-          api.get('/professores').catch(() => ({ data: [] }))
+          api.get('/professores').catch(() => ({ data: [] })),
+          api.get('/turmas').catch(() => ({ data: [] }))
         ]);
         
         let disciplinasParaMostrar = disciplinasRes.data;
@@ -98,6 +101,7 @@ export const Disciplinas = () => {
         setReservas(reservasRes.data);
         setPeriodos(periodosRes.data);
         setProfessores(professoresRes.data);
+        setTurmas(turmasRes.data);
 
       } catch (error) {
         console.error('Erro ao buscar dados:', error);
@@ -110,13 +114,14 @@ export const Disciplinas = () => {
 
   const cancelarEdicao = () => {
     setIdEditando(null);
-    reset({ nome: '', numeroAlunos: 0, tagIds: [], professorId: '' });
+    reset({ nome: '', numeroAlunos: 0, tagIds: [], professorId: '', turmaId: '' });
   };
 
   const iniciarEdicao = (disciplina: Disciplina) => {
     setIdEditando(disciplina.id);
     setValue('nome', disciplina.nome);
     setValue('numeroAlunos', disciplina.numeroAlunos);
+    setValue('turmaId', disciplina.turmaId ? String(disciplina.turmaId) : '');
     
     //mapeia o professorId baseado no nome que veio do DTO
     const profEncontrado = professores.find(p => p.nome === disciplina.nomeProfessor);
@@ -134,6 +139,7 @@ export const Disciplinas = () => {
         coordenadorId: userId || 0,
         numeroAlunos: Number(data.numeroAlunos),
         professorId: Number(data.professorId),
+        turmaId: data.turmaId ? Number(data.turmaId) : null,
         tagIds: data.tagIds ? data.tagIds.map(Number) : []
       };
 
@@ -172,14 +178,15 @@ export const Disciplinas = () => {
     if (!disciplinaParaEnsalar) return [];
     const exigencias = disciplinaParaEnsalar.tagsExigidas;
     const meuCursoNormalizado = curso?.trim().toLowerCase();
-    const qtdAlunos = disciplinaParaEnsalar.numeroAlunos;
+    const turmaAssociada = turmas.find(t => t.id === disciplinaParaEnsalar.turmaId);
+    const qtdAlunos = turmaAssociada?.capacidade ?? disciplinaParaEnsalar.numeroAlunos;
 
     const salasFiltradas = salas.filter(sala => {
       const cursoSalaNormalizado = sala.cursoVinculado?.trim().toLowerCase();
       const temPermissaoDeAcesso = sala.interdisciplinar === true || cursoSalaNormalizado === meuCursoNormalizado;
       if (isCoordenador && !temPermissaoDeAcesso) return false;
       
-      if (sala.capacidade < (qtdAlunos * 0.85)) return false;
+      if (sala.capacidade < qtdAlunos) return false;
 
       if (exigencias.length > 0) {
         const tagsDaSala = sala.tags || []; 
@@ -189,7 +196,7 @@ export const Disciplinas = () => {
       return true;
     });
 
-    return salasFiltradas.sort((a, b) => Math.abs(a.capacidade - qtdAlunos) - Math.abs(b.capacidade - qtdAlunos));
+    return salasFiltradas.sort((a, b) => a.capacidade - b.capacidade);
   };
 
   const abrirModalReserva = (disciplina: Disciplina) => {
@@ -299,6 +306,32 @@ const periodoAceitaReservas = (periodo: PeriodoLetivo) => {
                 <label className="form-label">Nº de Alunos *</label>
                 <input type="number" className="form-input" placeholder="Ex: 40" min="1" {...register('numeroAlunos', { required: true, min: 1 })} />
               </div>
+            </div>
+
+            <div>
+              <label className="form-label" style={{ marginBottom: '0.5rem' }}>Turma (opcional)</label>
+              <select className="form-input" {...register('turmaId')} defaultValue="">
+                <option value="">Sem turma (evento ou atividade isolada)</option>
+                {turmas.map(turma => (
+                  <option key={turma.id} value={turma.id}>
+                    {turma.nome} — Código {turma.codigoDisciplina} — Grupo {turma.grupoDisciplina} — {turma.capacidade} alunos
+                  </option>
+                ))}
+              </select>
+              <small style={{ color: 'var(--ink-400)', display: 'block', marginTop: '6px' }}>
+                Quando uma turma for selecionada, sua capacidade será usada para filtrar as salas. Sem turma, será usada a quantidade de alunos informada acima.
+              </small>
+              {turmas.length === 0 && (
+                <small style={{ color: '#b45309', display: 'block', marginTop: '4px' }}>
+                 
+                  <p>
+  Nenhuma turma cadastrada para o seu curso.
+  Você pode cadastrar uma turma na página Turmas
+  ou continuar com a disciplina sem turma.
+                  </p>
+
+                </small>
+              )}
             </div>
 
             {/*escolher professor*/}

@@ -70,8 +70,21 @@ public class SalaService {
 
 
     public List<SalaResponseDTO> getAllSalas(Usuario usuario) {
-        return salaRepository.findByCampus(usuario.getCampus())
-                .stream()
+//        return salaRepository.findByCampus(usuario.getCampus())
+//                .stream()
+//                .map(this::mapToResponse)
+//                .collect(Collectors.toList());
+        List<Sala> salas;
+        if ("COORDENADOR".equals(usuario.getRole())) {
+            // O coordenador precisa consultar salas de todos os campi
+            // para encontrar salas compatíveis com seu curso.
+            salas = salaRepository.findAll();
+        } else {
+            // O gestor continua visualizando apenas as salas
+            // do próprio campus.
+            salas = salaRepository.findByCampus(usuario.getCampus());
+        }
+        return salas.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

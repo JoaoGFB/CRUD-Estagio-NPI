@@ -38,6 +38,5 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             @Param("dia") DayOfWeek dia,
             @Param("horarioInicio") LocalTime horarioInicio,
             @Param("horarioFim") LocalTime horarioFim);
-
     List<Reserva> findBySalaCampus(String campus);
 }
