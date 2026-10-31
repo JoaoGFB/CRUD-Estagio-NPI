@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.EnsalamentoResponseDTO;
 import com.example.demo.dto.ReservaRequestDTO;
 import com.example.demo.dto.ReservaResponseDTO;
 import com.example.demo.service.ReservaService;
@@ -54,5 +55,14 @@ public class ReservaController {
     @GetMapping("/campus/{campus}")
     public ResponseEntity<List<ReservaResponseDTO>> listarPorCampus(@PathVariable String campus) {
         return ResponseEntity.ok(reservaService.listarReservasPorCampus(campus));
+    }
+
+    @GetMapping("/ensalamentos/periodo/{periodoId}")
+    public ResponseEntity<List<EnsalamentoResponseDTO>> listarEnsalamentos(
+            @PathVariable Long periodoId) {
+
+        return ResponseEntity.ok(
+                reservaService.listarEnsalamentosPorPeriodo(periodoId)
+        );
     }
 }

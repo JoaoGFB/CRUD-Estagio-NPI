@@ -84,6 +84,7 @@ export const Layout = ({ children }: LayoutProps) => {
           <>
             <Link to="/" className={`sidebar-link ${isActive('/') ? 'active' : ''}`}><IconRooms /> Salas</Link>
             <Link to="/tags" className={`sidebar-link ${isActive('/tags') ? 'active' : ''}`}><IconTags /> Tags</Link>
+            <Link to="/ensalamentos" className={`sidebar-link ${isActive('/ensalamentos') ? 'active' : ''}`}><IconCalendar /> Ensalamentos</Link>
           </>
         )}
 

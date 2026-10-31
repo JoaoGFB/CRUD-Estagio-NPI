@@ -12,6 +12,7 @@ import { PrivateRoute } from './components/PrivateRoute';//import da guarda de r
 import { Periodos } from './pages/Periodos';
 import { Professores } from './pages/Professores';
 import { Turmas } from './pages/Turmas';
+import { Ensalamentos } from './pages/Ensalamentos';
 
 const RoutesConfig = () => {
   //extração da role do contexto para fazer o redirecionamento no login
@@ -102,6 +103,13 @@ const RoutesConfig = () => {
           </PrivateRoute>
         }/>
       
+      <Route
+        path="/ensalamentos"
+        element={
+          <PrivateRoute rolesRequeridos={['GESTOR']}>
+            <Layout><Ensalamentos /></Layout>
+          </PrivateRoute>
+        }/>
       {/*em caso de uma url errada, joga pro início, e o PrivateRoute assume*/}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

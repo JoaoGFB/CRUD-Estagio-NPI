@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import com.example.demo.model.StatusReserva;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -39,4 +40,11 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             @Param("horarioInicio") LocalTime horarioInicio,
             @Param("horarioFim") LocalTime horarioFim);
     List<Reserva> findBySalaCampus(String campus);
+    List<Reserva> findByPeriodoLetivoIdOrderByDiaDaSemanaAscHorarioInicioAsc(
+            Long periodoId
+    );
+    List<Reserva> findByPeriodoLetivoIdAndStatusOrderByDiaDaSemanaAscHorarioInicioAsc(
+            Long periodoId,
+            StatusReserva status
+    );
 }

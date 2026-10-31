@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.EnsalamentoResponseDTO;
 import com.example.demo.dto.ReservaRequestDTO;
 import com.example.demo.dto.ReservaResponseDTO;
 import com.example.demo.model.*;
@@ -104,6 +105,69 @@ public class ReservaService {
         Reserva salva = reservaRepository.save(reserva);
         return mapToResponse(salva);
     }
+
+    public List<EnsalamentoResponseDTO> listarEnsalamentosPorPeriodo(Long periodoId) {
+
+        periodoLetivoRepository.findById(periodoId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Período letivo não encontrado."));
+
+        return reservaRepository
+                .findByPeriodoLetivoIdAndStatusOrderByDiaDaSemanaAscHorarioInicioAsc(
+                        periodoId,
+                        StatusReserva.APROVADA
+                )
+                .stream()
+                .map(this::mapearEnsalamento)
+                .collect(Collectors.toList());
+    }
+
+
+    private EnsalamentoResponseDTO mapearEnsalamento(Reserva reserva) {
+
+        EnsalamentoResponseDTO dto = new EnsalamentoResponseDTO();
+
+        Disciplina disciplina = reserva.getDisciplina();
+        Sala sala = reserva.getSala();
+        Turma turma = disciplina.getTurma();
+
+        dto.setReservaId(reserva.getId());
+        dto.setPeriodo(reserva.getPeriodoLetivo().getNome());
+        dto.setDisciplina(disciplina.getNome());
+
+        dto.setProfessor(
+                disciplina.getProfessor() != null
+                        ? disciplina.getProfessor().getNome()
+                        : "Não informado"
+        );
+
+        dto.setCoordenador(disciplina.getCoordenador().getLogin());
+
+        if (turma != null) {
+            dto.setCurso(turma.getCurso());
+            dto.setTurma(turma.getNome());
+            dto.setGrupo(turma.getGrupoDisciplina());
+            dto.setQuantidadeAlunos(turma.getCapacidade());
+        } else {
+            dto.setCurso(disciplina.getCoordenador().getCurso());
+            dto.setQuantidadeAlunos(disciplina.getNumeroAlunos());
+        }
+
+        dto.setSala(sala.getNome().getNome());
+        dto.setCampus(sala.getCampus());
+        dto.setCapacidadeSala(sala.getCapacidade());
+        dto.setInterdisciplinar(sala.getInterdisciplinar());
+        dto.setCursoVinculado(sala.getCursoVinculado());
+
+        dto.setDiaDaSemana(reserva.getDiaDaSemana());
+        dto.setHorarioInicio(reserva.getHorarioInicio());
+        dto.setHorarioFim(reserva.getHorarioFim());
+        dto.setStatus(reserva.getStatus());
+
+        return dto;
+    }
+
+
 
     //ação do gestor
     public ReservaResponseDTO aprovarReserva(Long id) {
